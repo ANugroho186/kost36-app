@@ -15,11 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Akun dengan password yang diketahui umum hanya boleh ada di mesin lokal.
+        if (app()->isLocal()) {
+            User::factory()->owner()->create([
+                'name' => 'Pemilik Kost',
+                'username' => 'pemilik',
+                'email' => 'pemilik@example.com',
+            ]);
+        }
     }
 }
