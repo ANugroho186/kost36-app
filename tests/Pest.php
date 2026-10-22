@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -31,6 +32,14 @@ pest()->extend(TestCase::class)
 
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);
+});
+
+// Memastikan error berasal dari foreign key (restrictOnDelete), bukan error database lain.
+// Pesan PostgreSQL dan SQLite berbeda, tapi keduanya memuat "foreign key".
+expect()->extend('toViolateForeignKey', function () {
+    return $this->toThrow(
+        fn (QueryException $e) => expect($e->getMessage())->toMatch('/foreign key/i'),
+    );
 });
 
 /*
