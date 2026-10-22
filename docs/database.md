@@ -128,7 +128,7 @@ erDiagram
     }
     ANNOUNCEMENTS {
         bigint id PK
-        bigint property_id FK
+        bigint property_id FK "cascadeOnDelete"
         string title
         text body
         timestamp published_at
@@ -144,20 +144,21 @@ erDiagram
     }
     INVENTORY_ITEMS {
         bigint id PK
-        bigint property_id FK
-        bigint room_id FK "nullable"
+        bigint property_id FK "cascadeOnDelete"
+        bigint room_id FK "nullable, restrictOnDelete"
         string name
         string condition "good, needs_repair, broken"
         text notes "nullable"
     }
     RENTAL_INQUIRIES {
         bigint id PK
-        bigint property_id FK
+        bigint property_id FK "cascadeOnDelete"
         string name
         string contact
         date preferred_date "nullable"
         text message "nullable"
         string status "new, contacted, done"
+        timestamp done_at "nullable"
     }
     PARCELS {
         bigint id PK
@@ -313,7 +314,9 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 - `maintenance_logs.complaint_id`: `nullOnDelete`. Catatan perawatan tetap ada walaupun keluhannya dihapus.
 - `room_photos.room_id` dan `tenancy_occupants.tenancy_id`: `cascadeOnDelete`, karena barisnya adalah bagian dari kamar atau sewa. Cascade hanya menghapus baris database. File foto di disk tetap harus dihapus oleh aplikasi.
 - `rooms` punya unique `(property_id, number)` agar tidak ada nomor kamar kembar dalam satu kost.
-- FK tabel lain ditentukan saat migration tabelnya dibuat.
+- `announcements.property_id`, `inventory_items.property_id`, dan `rental_inquiries.property_id`: `cascadeOnDelete`. Ketiganya bagian dari kost atau data sementara, bukan riwayat penting.
+- `inventory_items.room_id`: `restrictOnDelete`, dengan alasan yang sama seperti di `maintenance_logs`. Barang harus dipindah atau dihapus dulu sebelum kamarnya dihapus.
+- `notifications` (bawaan Laravel) memakai relasi polymorphic tanpa FK, jadi tidak ikut aturan di atas.
 
 ### File
 
@@ -323,7 +326,7 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 
 ### Lain-lain
 
-- `rental_inquiries` dihapus otomatis beberapa waktu setelah statusnya `done`.
+- `rental_inquiries` dihapus otomatis beberapa waktu setelah `done_at` (diisi saat status menjadi `done`). Lamanya belum diputuskan.
 - `parcels` dihapus otomatis 30 hari setelah `collected_at`, dan `parcel_reports` 30 hari setelah `resolved_at`.
 - `maintenance_logs`/`inventory_items` dengan `room_id` kosong berarti area umum (dapur, kamar mandi bersama).
 - Nilai tetap (role dan semua kolom status/type) memakai enum PHP berbasis string di `app/Enums`.
