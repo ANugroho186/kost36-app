@@ -42,4 +42,36 @@ class Property extends Model
     {
         return $this->hasMany(Room::class);
     }
+
+    /**
+     * @return HasMany<Announcement, $this>
+     */
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
+    /**
+     * @return HasMany<MaintenanceLog, $this>
+     */
+    public function maintenanceLogs(): HasMany
+    {
+        return $this->hasMany(MaintenanceLog::class);
+    }
+
+    /**
+     * @return HasMany<InventoryItem, $this>
+     */
+    public function inventoryItems(): HasMany
+    {
+        return $this->hasMany(InventoryItem::class);
+    }
+
+    /**
+     * @return HasMany<RentalInquiry, $this>
+     */
+    public function rentalInquiries(): HasMany
+    {
+        return $this->hasMany(RentalInquiry::class);
+    }
 }
