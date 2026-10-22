@@ -111,7 +111,7 @@ erDiagram
     }
     COMPLAINTS {
         bigint id PK
-        bigint room_id FK
+        bigint room_id FK "restrictOnDelete"
         bigint reporter_id FK "nullable, nullOnDelete"
         string title
         text description
@@ -120,7 +120,7 @@ erDiagram
     }
     COMPLAINT_PHOTOS {
         bigint id PK
-        bigint complaint_id FK
+        bigint complaint_id FK "cascadeOnDelete"
         string path "disk privat"
     }
     ANNOUNCEMENTS {
@@ -133,9 +133,9 @@ erDiagram
     }
     MAINTENANCE_LOGS {
         bigint id PK
-        bigint property_id FK
-        bigint room_id FK "nullable"
-        bigint complaint_id FK "nullable"
+        bigint property_id FK "restrictOnDelete"
+        bigint room_id FK "nullable, restrictOnDelete"
+        bigint complaint_id FK "nullable, nullOnDelete"
         date performed_at
         text description
     }
@@ -260,6 +260,9 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 - `tenancies.room_id`: `restrictOnDelete`. Kamar yang punya riwayat sewa tidak bisa dihapus.
 - `payment_proofs.tenancy_id` dan `tenancy_decisions.tenancy_id`: `restrictOnDelete`. Bukti pembayaran (beserta filenya) dan jejak keputusan pemilik tidak boleh ikut hilang diam-diam.
 - `reminder_logs.tenancy_id`: `cascadeOnDelete`, karena isinya hanya data teknis untuk mencegah pengingat ganda.
+- `complaints.room_id`, `maintenance_logs.property_id`, dan `maintenance_logs.room_id`: `restrictOnDelete`, agar riwayat keluhan dan perawatan tidak hilang. `room_id` perawatan tidak memakai `nullOnDelete`, karena `NULL` di kolom itu berarti area umum.
+- `complaint_photos.complaint_id`: `cascadeOnDelete` (foto adalah bagian dari keluhan, file di disk dihapus oleh aplikasi).
+- `maintenance_logs.complaint_id`: `nullOnDelete`. Catatan perawatan tetap ada walaupun keluhannya dihapus.
 - `room_photos.room_id` dan `tenancy_occupants.tenancy_id`: `cascadeOnDelete`, karena barisnya adalah bagian dari kamar atau sewa. Cascade hanya menghapus baris database. File foto di disk tetap harus dihapus oleh aplikasi.
 - `rooms` punya unique `(property_id, number)` agar tidak ada nomor kamar kembar dalam satu kost.
 - FK tabel lain ditentukan saat migration tabelnya dibuat.
