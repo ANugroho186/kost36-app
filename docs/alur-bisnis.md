@@ -2,31 +2,45 @@
 
 ## Peran dan hak akses
 
-| Peran                    | Bisa                                                                                                                                                                                            | Tidak bisa                                                         |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **Publik** (tanpa login) | Melihat profil kost, foto, fasilitas, aturan, lokasi, dan status kamar (tersedia/terisi). Mengisi form survei/daftar tunggu                                                                     | Melihat siapa penghuni kamar mana                                  |
-| **Penghuni** (`tenant`)  | Melihat kamarnya sendiri dan tanggal `paid_until`. Mengunggah bukti transfer, melapor dan memantau keluhan, membaca pengumuman, membuka halaman "Data saya", mengatur notifikasi Telegram/email | Melihat data atau keluhan penghuni lain. Menghapus akunnya sendiri |
-| **Pemilik** (`owner`)    | Semuanya: kamar dan foto, data sewa, verifikasi bukti, keputusan penonaktifan, keluhan, perawatan, inventaris, pengumuman, permintaan survei                                                    | —                                                                  |
+| Peran                    | Bisa                                                                                                                                                                                            | Tidak bisa                                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Publik** (tanpa login) | Melihat profil kost, foto, fasilitas, aturan, lokasi, dan status kamar (tersedia/terisi). Mengisi form survei/daftar tunggu                                                                     | Melihat siapa penghuni kamar mana                                                                                                           |
+| **Penghuni** (`tenant`)  | Melihat kamarnya sendiri dan tanggal `paid_until`. Mengunggah bukti transfer, melapor dan memantau keluhan, membaca pengumuman, membuka halaman "Data saya", mengatur notifikasi Telegram/email | Melihat data atau keluhan penghuni kamar lain. Melihat gambar bukti transfer dan kontak notifikasi teman sekamar. Menghapus akunnya sendiri |
+| **Pemilik** (`owner`)    | Semuanya: kamar dan foto, data sewa, verifikasi bukti, keputusan penonaktifan, keluhan, perawatan, inventaris, pengumuman, permintaan survei                                                    | —                                                                                                                                           |
 
 - Akun penghuni dibuat oleh pemilik. Tidak ada registrasi publik.
 - Penghuni **nonaktif** tetap bisa login dengan akses terbatas: melihat info dan tanggal pengosongan, serta mengunggah bukti transfer.
 - Penghuni tanpa akun tetap tercatat. Pemilik yang mencatat keluhan atau pembayarannya.
-- Halaman "Data saya" menampilkan semua data tentang penghuni itu yang tersimpan di sistem, sebagai bentuk transparansi.
+- Halaman "Data saya" menampilkan semua data tentang penghuni itu yang tersimpan di sistem (data penghuninya sendiri dan data sewa kamarnya), sebagai bentuk transparansi.
+
+### Teman sekamar
+
+Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu sewa dan satu tagihan bersama. Kedua penghuni bisa mengunggah bukti transfer, dan bukti dari siapa pun memajukan `paid_until` kamar itu.
+
+| Data                                               | Terlihat oleh teman sekamar?                                    |
+| -------------------------------------------------- | --------------------------------------------------------------- |
+| Nickname                                           | Ya                                                              |
+| Tanggal `paid_until` dan status sewa               | Ya                                                              |
+| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama                     |
+| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                              |
+| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank) |
+| Kontak notifikasi (`notify_contact`)               | Tidak                                                           |
 
 ## Jadwal notifikasi
 
-| Waktu (relatif ke `paid_until`) | Penerima           | Isi                                                 |
-| ------------------------------- | ------------------ | --------------------------------------------------- |
-| H-3 dan H-0                     | Penghuni           | Pengingat jatuh tempo (tanggal saja, tanpa nominal) |
-| H+1, H+4, H+7                   | Penghuni           | Pengingat masa tenggang                             |
-| H+10                            | Pemilik            | Minta keputusan: perpanjang N hari atau nonaktifkan |
-| `extended_until` terlewat       | Pemilik            | Minta keputusan lagi                                |
-| Hari `vacate_by`                | Pemilik            | Konfirmasi kamar sudah kosong                       |
-| Bukti diunggah                  | Pemilik            | Ada bukti menunggu verifikasi                       |
-| Bukti disetujui/ditolak         | Penghuni           | Hasil verifikasi (dan alasan kalau ditolak)         |
-| Keluhan baru / selesai          | Pemilik / penghuni | Status keluhan                                      |
+| Waktu (relatif ke `paid_until`) | Penerima                             | Isi                                                 |
+| ------------------------------- | ------------------------------------ | --------------------------------------------------- |
+| H-3 dan H-0                     | Semua penghuni aktif                 | Pengingat jatuh tempo (tanggal saja, tanpa nominal) |
+| H+1, H+4, H+7                   | Semua penghuni aktif                 | Pengingat masa tenggang                             |
+| H+10                            | Pemilik                              | Minta keputusan: perpanjang N hari atau nonaktifkan |
+| `extended_until` terlewat       | Pemilik                              | Minta keputusan lagi                                |
+| Hari `vacate_by`                | Pemilik                              | Konfirmasi kamar sudah kosong                       |
+| Bukti diunggah                  | Pemilik                              | Ada bukti menunggu verifikasi                       |
+| Bukti disetujui                 | Semua penghuni aktif                 | Sewa diperpanjang sampai `paid_until` baru          |
+| Bukti ditolak                   | Pengunggah                           | Hasil verifikasi dan alasan penolakan               |
+| Keluhan baru / selesai          | Pemilik / semua penghuni aktif kamar | Status keluhan                                      |
 
-Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni mengaktifkannya.
+Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar.
 
 ## Alur keluhan
 
@@ -55,7 +69,7 @@ flowchart TD
     D -- Tidak --> H
     D -- Ya --> E{"Sudah ada di reminder_logs?"}
     E -- Ya --> H
-    E -- Belum --> F["Kirim notifikasi lewat queue: portal, Telegram atau email"]
+    E -- Belum --> F["Kirim notifikasi ke semua penghuni aktif lewat queue: portal, Telegram atau email"]
     F --> G[Catat ke reminder_logs]
     G --> H{"Masih ada sewa lain?"}
     H -- Ya --> C
@@ -68,19 +82,19 @@ Kalau pengiriman ke Telegram/email gagal, job queue mencoba ulang beberapa kali 
 
 ```mermaid
 flowchart TD
-    A([Penghuni mengunggah bukti]) --> B{"Sistem: file dan sewa valid?"}
+    A([Salah satu penghuni mengunggah bukti]) --> B{"Sistem: file dan sewa valid?"}
     B -- Tidak --> A
     B -- Ya --> C["Simpan di disk privat, status pending"]
     C --> D[Notifikasi ke pemilik]
     D --> E[Pemilik mencocokkan dengan mutasi bank]
     E --> F{Sesuai?}
     F -- Tidak --> G["Tolak dengan alasan review_note"]
-    G --> H([Penghuni melihat alasan penolakan])
+    G --> H([Pengunggah melihat alasan penolakan])
     F -- Ya --> I["Setujui dan isi jumlah bulan, default 1"]
     I --> J["paid_until maju N bulan, extended_until dikosongkan"]
     J --> K{"Sewa berstatus inactive?"}
     K -- Ya --> L["Aktifkan kembali, kosongkan vacate_by"]
-    K -- Tidak --> M[Notifikasi ke penghuni]
+    K -- Tidak --> M[Notifikasi ke semua penghuni aktif]
     L --> M
     M --> N([Sewa diperpanjang])
 ```
@@ -98,18 +112,28 @@ flowchart TD
     E --> F([Kembali dicek saat batas baru terlewat])
     D -- Nonaktifkan --> G["status inactive, isi deactivated_at dan vacate_by"]
     G --> H["Kamar tetap terisi, akun tetap ada, akses terbatas"]
-    H --> I[Notifikasi ke penghuni berisi tanggal pengosongan]
+    H --> I[Notifikasi ke semua penghuni berisi tanggal pengosongan]
     I --> J{"Bukti disetujui sebelum vacate_by?"}
     J -- Ya --> K([Aktif kembali lewat alur verifikasi bukti])
     J -- Tidak --> L[Hari vacate_by: notifikasi ke pemilik]
     L --> M{"Pemilik: kamar sudah kosong?"}
     M -- Belum --> N["Undur vacate_by"]
     N --> L
-    M -- Ya --> O["status ended: hapus akun, anonimkan data, hapus file bukti"]
+    M -- Ya --> O["status ended: semua penghuni keluar, hapus akun, anonimkan data, hapus file bukti"]
     O --> P([Kamar menjadi tersedia])
 ```
 
-Akun **tidak pernah** dihapus otomatis. Menjawab "Ya" pada "kamar sudah kosong?" adalah persetujuan pemilik untuk menghapusnya. Langkah ini sebaiknya meminta konfirmasi password (fitur password confirmation sudah aktif).
+Akun **tidak pernah** dihapus otomatis. Menjawab "Ya" pada "kamar sudah kosong?" adalah persetujuan pemilik untuk menghapus akun semua penghuni kamar itu. Langkah ini sebaiknya meminta konfirmasi password (fitur password confirmation sudah aktif).
+
+## Alur satu penghuni keluar (sewa berlanjut)
+
+Dipakai kalau satu orang pindah sementara teman sekamarnya tetap tinggal.
+
+1. Penghuni memberi tahu pemilik bahwa ia akan keluar.
+2. Setelah penghuni itu benar-benar pindah, pemilik menandainya keluar dari halaman sewa kamar, dengan konfirmasi password.
+3. Sistem mengisi `moved_out_at`, menghapus file bukti transfer yang pernah diunggahnya, menghapus akunnya, lalu mengosongkan nickname dan kontaknya. Detailnya ada di `docs/database.md` bagian "Penghuni keluar".
+4. Sewa kamar tetap `active` dengan `paid_until` yang sama. Harga untuk jumlah penghuni yang baru disepakati dan dicatat pemilik di luar sistem.
+5. Kalau ia penghuni aktif terakhir, pakai alur pengosongan di atas (sewa `ended`), bukan alur ini.
 
 ## Alur permintaan survei (publik)
 
