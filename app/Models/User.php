@@ -70,4 +70,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(TenancyOccupant::class);
     }
+
+    /**
+     * Paket pesanan milik user ini.
+     *
+     * @return HasMany<Parcel, $this>
+     */
+    public function parcels(): HasMany
+    {
+        return $this->hasMany(Parcel::class);
+    }
+
+    /**
+     * Laporan paket salah terima yang dibuat user ini.
+     *
+     * @return HasMany<ParcelReport, $this>
+     */
+    public function parcelReports(): HasMany
+    {
+        return $this->hasMany(ParcelReport::class, 'reporter_id');
+    }
 }
