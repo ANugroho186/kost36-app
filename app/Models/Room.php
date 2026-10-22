@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\RoomFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,8 +17,8 @@ use Illuminate\Support\Carbon;
  * @property int $capacity
  * @property string $facilities
  * @property bool $is_published
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['number', 'capacity', 'facilities', 'is_published'])]
 class Room extends Model
@@ -53,5 +53,15 @@ class Room extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(RoomPhoto::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Semua sewa kamar ini, termasuk riwayat yang sudah berakhir.
+     *
+     * @return HasMany<Tenancy, $this>
+     */
+    public function tenancies(): HasMany
+    {
+        return $this->hasMany(Tenancy::class);
     }
 }
