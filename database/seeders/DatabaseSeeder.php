@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -16,12 +15,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Akun dengan password yang diketahui umum hanya boleh ada di mesin lokal.
+        // Instance demo nanti menjalankan DemoSeeder secara eksplisit.
         if (app()->isLocal()) {
-            User::factory()->owner()->create([
-                'name' => 'Pemilik Kost',
-                'username' => 'pemilik',
-                'email' => 'pemilik@example.com',
-            ]);
+            $this->call(DemoSeeder::class);
         }
     }
 }
