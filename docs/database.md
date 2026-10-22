@@ -28,6 +28,9 @@ erDiagram
     PROPERTIES ||--o{ INVENTORY_ITEMS : punya
     ROOMS |o--o{ INVENTORY_ITEMS : berisi
     PROPERTIES ||--o{ RENTAL_INQUIRIES : menerima
+    USERS ||--o{ PARCELS : memesan
+    USERS |o--o{ PARCEL_REPORTS : melapor
+    PARCELS |o--o{ PARCEL_REPORTS : dilaporkan
 
     USERS {
         bigint id PK
@@ -55,15 +58,15 @@ erDiagram
     }
     ROOM_PHOTOS {
         bigint id PK
-        bigint room_id FK
+        bigint room_id FK "cascadeOnDelete"
         string path "disk publik"
-        int sort_order
+        int sort_order "default 0"
     }
     TENANCIES {
         bigint id PK
-        bigint room_id FK
+        bigint room_id FK "restrictOnDelete"
         date start_date
-        date paid_until
+        date paid_until "tanggal bayar berikutnya"
         date extended_until "nullable"
         string status "active, inactive, ended"
         timestamp deactivated_at "nullable"
@@ -72,7 +75,7 @@ erDiagram
     }
     TENANCY_OCCUPANTS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "cascadeOnDelete"
         bigint user_id FK "nullable, nullOnDelete"
         string nickname "nullable"
         date moved_in_at
@@ -82,7 +85,7 @@ erDiagram
     }
     PAYMENT_PROOFS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "restrictOnDelete"
         bigint uploaded_by FK "nullable, nullOnDelete"
         string file_path "nullable, disk privat"
         string status "pending, approved, rejected"
@@ -95,7 +98,7 @@ erDiagram
     }
     TENANCY_DECISIONS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "restrictOnDelete"
         string type "extend, deactivate, reactivate, postpone_vacate, end"
         smallint days "nullable"
         date new_date "nullable"
@@ -104,14 +107,14 @@ erDiagram
     }
     REMINDER_LOGS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "cascadeOnDelete"
         date due_date
         string type "H-3, H-0, H+1, H+4, H+7, H+10"
         timestamp sent_at
     }
     COMPLAINTS {
         bigint id PK
-        bigint room_id FK
+        bigint room_id FK "restrictOnDelete"
         bigint reporter_id FK "nullable, nullOnDelete"
         string title
         text description
@@ -120,12 +123,12 @@ erDiagram
     }
     COMPLAINT_PHOTOS {
         bigint id PK
-        bigint complaint_id FK
+        bigint complaint_id FK "cascadeOnDelete"
         string path "disk privat"
     }
     ANNOUNCEMENTS {
         bigint id PK
-        bigint property_id FK
+        bigint property_id FK "cascadeOnDelete"
         string title
         text body
         timestamp published_at
@@ -133,28 +136,45 @@ erDiagram
     }
     MAINTENANCE_LOGS {
         bigint id PK
-        bigint property_id FK
-        bigint room_id FK "nullable"
-        bigint complaint_id FK "nullable"
+        bigint property_id FK "restrictOnDelete"
+        bigint room_id FK "nullable, restrictOnDelete"
+        bigint complaint_id FK "nullable, nullOnDelete"
         date performed_at
         text description
     }
     INVENTORY_ITEMS {
         bigint id PK
-        bigint property_id FK
-        bigint room_id FK "nullable"
+        bigint property_id FK "cascadeOnDelete"
+        bigint room_id FK "nullable, restrictOnDelete"
         string name
         string condition "good, needs_repair, broken"
         text notes "nullable"
     }
     RENTAL_INQUIRIES {
         bigint id PK
-        bigint property_id FK
+        bigint property_id FK "cascadeOnDelete"
         string name
         string contact
         date preferred_date "nullable"
         text message "nullable"
         string status "new, contacted, done"
+        timestamp done_at "nullable"
+    }
+    PARCELS {
+        bigint id PK
+        bigint user_id FK "cascadeOnDelete"
+        string tracking_number "no. resi/pesanan"
+        text item_name "nullable, terenkripsi"
+        date expected_date "nullable"
+        timestamp held_by_owner_at "nullable"
+        timestamp collected_at "nullable"
+    }
+    PARCEL_REPORTS {
+        bigint id PK
+        bigint reporter_id FK "nullable, nullOnDelete"
+        bigint parcel_id FK "nullable, nullOnDelete"
+        text description
+        timestamp resolved_at "nullable"
     }
 ```
 
@@ -169,6 +189,7 @@ Hanya ini:
 - `start_date` dan `paid_until` milik sewa kamar (bukan per orang), untuk pengingat.
 - Akun login (opsional): `username`, `password`, dan `email` (opsional).
 - Satu kontak notifikasi per penghuni (opsional): `notify_channel` + `notify_contact`. Untuk Telegram, isinya `chat_id` yang didapat otomatis saat penghuni membuka link bot dan menekan Start.
+- Paket pesanan (opsional, diisi penghuni sendiri): no. resi, nama/isi barang (terenkripsi), dan perkiraan tanggal tiba. Dihapus otomatis 30 hari setelah diambil.
 
 **Tidak disimpan:** NIK, foto KTP, alamat asal, tanggal lahir, tempat kerja/kampus, kontak darurat. Data ini dicek atau dicatat offline oleh pemilik.
 
@@ -212,6 +233,8 @@ CREATE UNIQUE INDEX tenancy_occupants_user_active_unique
 
 ### Pembayaran dan masa tenggang
 
+`paid_until` adalah **tanggal bayar berikutnya** (jatuh tempo), bukan hari terakhir yang sudah dibayar. Contoh: penghuni masuk 1 Januari dan membayar 1 bulan di muka, maka `paid_until` = 1 Februari. Pada 1 Februari (H-0) penghuni masih lancar, dan baru terlambat mulai 2 Februari (H+1). Saat sewa dibuat, pemilik mengisi `paid_until` = `start_date` + jumlah bulan yang dibayar di muka.
+
 Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku adalah `extended_until` kalau terisi, selain itu `paid_until`.
 
 | Kondisi (dibanding `paid_until`) | Status turunan                        | Akses penghuni                   |
@@ -232,6 +255,32 @@ Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku ada
 
 `reminder_logs` punya unique key `(tenancy_id, due_date, type)`. Scheduler yang berjalan dua kali tidak mengirim pengingat ganda. Satu pengingat dikirim ke semua penghuni aktif kamar itu, dan dicatat satu kali per sewa.
 
+### Paket pesanan
+
+Penghuni mendaftarkan paket yang sedang dikirim ke alamat kost. Pemilik kost menerima notifikasi dan bisa menerima paket itu kalau penghuninya sedang tidak ada.
+
+Status paket dihitung dari dua kolom waktu, tidak disimpan:
+
+| `held_by_owner_at` | `collected_at` | Status                                        |
+| ------------------ | -------------- | --------------------------------------------- |
+| kosong             | kosong         | Menunggu                                      |
+| terisi             | kosong         | Ada di rumah pemilik, belum diambil           |
+| terisi             | terisi         | Sudah diambil dari pemilik                    |
+| kosong             | terisi         | Diterima langsung oleh penghuni pemilik paket |
+
+| Data                              | Penghuni pemilik paket | Pemilik kost | Penghuni lain (termasuk teman sekamar) |
+| --------------------------------- | ---------------------- | ------------ | -------------------------------------- |
+| No. resi                          | Ya                     | Ya           | Tidak                                  |
+| Nickname dan kamar pemilik paket  | Ya                     | Ya           | Tidak                                  |
+| Perkiraan tanggal tiba dan status | Ya                     | Ya           | Tidak                                  |
+| Nama/isi barang (`item_name`)     | Ya                     | Tidak        | Tidak                                  |
+
+- `item_name` tidak pernah dikirim server ke halaman pemilik, jadi bukan sekadar disembunyikan di tampilan. Kolom ini disimpan terenkripsi dengan cast `encrypted`, sehingga isinya tidak terbaca kalau database atau backup bocor. Kuncinya (`APP_KEY`) ada di server, jadi pemegang akses penuh server secara teknis tetap bisa membukanya. Jaminan "pemilik tidak melihat isi barang" adalah aturan aplikasi.
+- Pemilik paket dicatat lewat `user_id`, bukan `tenancy_occupants`. Policy cukup membandingkan dengan akun yang login, dan data paket otomatis terhapus saat akun dihapus. Penghuni tanpa akun tidak bisa memakai fitur ini.
+- Unique `(user_id, tracking_number)` mencegah penghuni mendaftarkan resi yang sama dua kali. Resi sengaja tidak unik global, karena penolakan resi milik penghuni lain akan membocorkan bahwa resi itu terdaftar.
+- Penghuni bisa menghapus paketnya sendiri yang masih menunggu, misalnya kalau pesanan dibatalkan.
+- **Laporan salah terima** (`parcel_reports`): penghuni yang menerima paket bukan miliknya menulis deskripsi (no. resi atau nama di label). Pelapor tidak bisa melihat daftar paket. Pemilik mencocokkan laporan itu dengan paket yang terdaftar lalu mengisi `parcel_id`. Saat itu juga penghuni pemilik paket menerima notifikasi, tanpa disebutkan siapa pelapornya. Laporan selesai saat `resolved_at` diisi.
+
 ### Penghuni keluar
 
 Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setelah pemilik mengonfirmasi.
@@ -240,7 +289,7 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 
 1. `moved_out_at` diisi.
 2. File bukti transfer yang diunggahnya dihapus (`file_path = NULL`, `file_deleted_at` diisi). Langkah ini dilakukan **sebelum** akun dihapus, karena setelah itu `uploaded_by` menjadi `NULL` dan file tidak bisa dilacak lagi ke pengunggahnya.
-3. Akun `users` penghuni itu dihapus. FK yang menunjuk ke akun itu otomatis menjadi `NULL` (`nullOnDelete`).
+3. Akun `users` penghuni itu dihapus. FK yang menunjuk ke akun itu otomatis menjadi `NULL` (`nullOnDelete`), dan data paket pesanannya ikut terhapus (`cascadeOnDelete`).
 4. `nickname` dan `notify_contact` di baris penghuninya dikosongkan.
 5. Sewa kamar dan `paid_until` tetap berjalan. Perubahan harga karena penghuni berkurang dicatat pemilik di luar sistem.
 
@@ -253,10 +302,21 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 
 ### Hapus data (foreign key)
 
-- FK ke `users` milik penghuni (`tenancy_occupants.user_id`, `payment_proofs.uploaded_by`, `complaints.reporter_id`): `nullOnDelete`, agar riwayat tetap ada setelah akun dihapus.
+- FK ke `users` milik penghuni (`tenancy_occupants.user_id`, `payment_proofs.uploaded_by`, `complaints.reporter_id`, `parcel_reports.reporter_id`): `nullOnDelete`, agar riwayat tetap ada setelah akun dihapus.
+- `parcels.user_id`: `cascadeOnDelete`. Data paket bersifat pribadi dan tidak perlu disimpan sebagai riwayat.
+- `parcel_reports.parcel_id`: `nullOnDelete`. Laporan tetap ada walaupun paketnya sudah dihapus.
 - `properties.owner_id` dan `rooms.property_id`: `restrictOnDelete`. Akun pemilik dan kost tidak bisa terhapus selama masih punya kost atau kamar, sehingga riwayat sewa tidak ikut hilang.
+- `tenancies.room_id`: `restrictOnDelete`. Kamar yang punya riwayat sewa tidak bisa dihapus.
+- `payment_proofs.tenancy_id` dan `tenancy_decisions.tenancy_id`: `restrictOnDelete`. Bukti pembayaran (beserta filenya) dan jejak keputusan pemilik tidak boleh ikut hilang diam-diam.
+- `reminder_logs.tenancy_id`: `cascadeOnDelete`, karena isinya hanya data teknis untuk mencegah pengingat ganda.
+- `complaints.room_id`, `maintenance_logs.property_id`, dan `maintenance_logs.room_id`: `restrictOnDelete`, agar riwayat keluhan dan perawatan tidak hilang. `room_id` perawatan tidak memakai `nullOnDelete`, karena `NULL` di kolom itu berarti area umum.
+- `complaint_photos.complaint_id`: `cascadeOnDelete` (foto adalah bagian dari keluhan, file di disk dihapus oleh aplikasi).
+- `maintenance_logs.complaint_id`: `nullOnDelete`. Catatan perawatan tetap ada walaupun keluhannya dihapus.
+- `room_photos.room_id` dan `tenancy_occupants.tenancy_id`: `cascadeOnDelete`, karena barisnya adalah bagian dari kamar atau sewa. Cascade hanya menghapus baris database. File foto di disk tetap harus dihapus oleh aplikasi.
 - `rooms` punya unique `(property_id, number)` agar tidak ada nomor kamar kembar dalam satu kost.
-- FK tabel lain ditentukan saat migration tabelnya dibuat.
+- `announcements.property_id`, `inventory_items.property_id`, dan `rental_inquiries.property_id`: `cascadeOnDelete`. Ketiganya bagian dari kost atau data sementara, bukan riwayat penting.
+- `inventory_items.room_id`: `restrictOnDelete`, dengan alasan yang sama seperti di `maintenance_logs`. Barang harus dipindah atau dihapus dulu sebelum kamarnya dihapus.
+- `notifications` (bawaan Laravel) memakai relasi polymorphic tanpa FK, jadi tidak ikut aturan di atas.
 
 ### File
 
@@ -266,6 +326,7 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 
 ### Lain-lain
 
-- `rental_inquiries` dihapus otomatis beberapa waktu setelah statusnya `done`.
+- `rental_inquiries` dihapus otomatis beberapa waktu setelah `done_at` (diisi saat status menjadi `done`). Lamanya belum diputuskan.
+- `parcels` dihapus otomatis 30 hari setelah `collected_at`, dan `parcel_reports` 30 hari setelah `resolved_at`.
 - `maintenance_logs`/`inventory_items` dengan `room_id` kosong berarti area umum (dapur, kamar mandi bersama).
 - Nilai tetap (role dan semua kolom status/type) memakai enum PHP berbasis string di `app/Enums`.
