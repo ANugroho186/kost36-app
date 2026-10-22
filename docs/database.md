@@ -12,7 +12,8 @@ erDiagram
     PROPERTIES ||--|{ ROOMS : punya
     ROOMS ||--o{ ROOM_PHOTOS : punya
     ROOMS ||--o{ TENANCIES : disewa
-    USERS |o--o{ TENANCIES : login_sebagai
+    TENANCIES ||--|{ TENANCY_OCCUPANTS : dihuni
+    USERS |o--o{ TENANCY_OCCUPANTS : login_sebagai
     TENANCIES ||--o{ PAYMENT_PROOFS : punya
     USERS |o--o{ PAYMENT_PROOFS : mengunggah
     TENANCIES ||--o{ TENANCY_DECISIONS : punya
@@ -38,7 +39,7 @@ erDiagram
     }
     PROPERTIES {
         bigint id PK
-        bigint owner_id FK
+        bigint owner_id FK "restrictOnDelete"
         string name
         text address
         text description
@@ -46,10 +47,11 @@ erDiagram
     }
     ROOMS {
         bigint id PK
-        bigint property_id FK
-        string number
+        bigint property_id FK "restrictOnDelete"
+        string number "unik per property"
+        smallint capacity "maks penghuni, default 2"
         text facilities
-        boolean is_published
+        boolean is_published "default false"
     }
     ROOM_PHOTOS {
         bigint id PK
@@ -60,8 +62,6 @@ erDiagram
     TENANCIES {
         bigint id PK
         bigint room_id FK
-        bigint user_id FK "nullable, nullOnDelete"
-        string nickname "nullable"
         date start_date
         date paid_until
         date extended_until "nullable"
@@ -69,6 +69,14 @@ erDiagram
         timestamp deactivated_at "nullable"
         date vacate_by "nullable"
         date end_date "nullable"
+    }
+    TENANCY_OCCUPANTS {
+        bigint id PK
+        bigint tenancy_id FK
+        bigint user_id FK "nullable, nullOnDelete"
+        string nickname "nullable"
+        date moved_in_at
+        date moved_out_at "nullable"
         string notify_channel "nullable: telegram, email"
         string notify_contact "nullable"
     }
@@ -157,9 +165,10 @@ Kolom `created_at`/`updated_at` (`timestamps()`) ada di semua tabel kecuali `ten
 Hanya ini:
 
 - `nickname` dan kamar, untuk identifikasi.
-- `start_date` dan `paid_until`, untuk pengingat.
+- `moved_in_at` dan `moved_out_at`, tanggal masuk dan keluar tiap penghuni.
+- `start_date` dan `paid_until` milik sewa kamar (bukan per orang), untuk pengingat.
 - Akun login (opsional): `username`, `password`, dan `email` (opsional).
-- Satu kontak notifikasi (opsional): `notify_channel` + `notify_contact`. Untuk Telegram, isinya `chat_id` yang didapat otomatis saat penghuni membuka link bot dan menekan Start.
+- Satu kontak notifikasi per penghuni (opsional): `notify_channel` + `notify_contact`. Untuk Telegram, isinya `chat_id` yang didapat otomatis saat penghuni membuka link bot dan menekan Start.
 
 **Tidak disimpan:** NIK, foto KTP, alamat asal, tanggal lahir, tempat kerja/kampus, kontak darurat. Data ini dicek atau dicatat offline oleh pemilik.
 
@@ -169,7 +178,8 @@ Hanya ini:
 
 - **Terisi:** kamar punya sewa berstatus `active` atau `inactive`. Penghuni nonaktif masih menempati kamar sampai `vacate_by`.
 - **Tersedia:** tidak ada sewa seperti itu.
-- `rooms.is_published = false` menyembunyikan kamar dari halaman publik.
+- Jumlah penghuni tidak memengaruhi status. Kamar berisi 1 orang tetap **terisi**, karena penghuni kedua hanya masuk bersama atau atas ajakan penghuni pertama.
+- `rooms.is_published = false` (default) menyembunyikan kamar dari halaman publik, sehingga kamar baru tidak tampil sebelum pemilik siap.
 - Halaman publik hanya menampilkan "tersedia/terisi", tanpa nama penghuni.
 
 ### Satu kamar, satu sewa yang menempati
@@ -181,6 +191,24 @@ CREATE UNIQUE INDEX tenancies_room_occupying_unique
     ON tenancies (room_id)
     WHERE status IN ('active', 'inactive');
 ```
+
+### Penghuni per kamar
+
+Satu sewa (`tenancies`) adalah satu tagihan untuk satu kamar. Orang yang tinggal di kamar itu dicatat di `tenancy_occupants`.
+
+- **Penghuni aktif:** baris dengan `moved_out_at` kosong. Jumlahnya maksimal `rooms.capacity` (default 2).
+- Batas jumlah dicek di aplikasi saat pemilik menambah penghuni, di dalam transaksi yang mengunci baris sewa (`lockForUpdate`). Index PostgreSQL tidak bisa membatasi jumlah baris.
+- Penghuni kedua bisa ditambahkan kapan saja ke sewa yang sama selama masih ada tempat. Tanggal jatuh temponya mengikuti sewa kamar.
+- Sewa `active`/`inactive` selalu punya minimal satu penghuni aktif. Kalau penghuni aktif terakhir keluar, sewa ikut berakhir (lihat "Penghuni keluar").
+- Satu akun hanya boleh aktif di satu kamar. Penghuni tanpa akun (`user_id` kosong) tidak terkena aturan ini, karena unique index PostgreSQL menganggap setiap `NULL` berbeda:
+
+```sql
+CREATE UNIQUE INDEX tenancy_occupants_user_active_unique
+    ON tenancy_occupants (user_id)
+    WHERE moved_out_at IS NULL;
+```
+
+- Harga sewa (berbeda untuk 1 dan 2 orang) tidak disimpan dan tidak ditampilkan. Pemilik mencatatnya di luar sistem.
 
 ### Pembayaran dan masa tenggang
 
@@ -194,6 +222,7 @@ Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku ada
 | H+10 dan seterusnya              | Perlu keputusan pemilik               | Normal sampai pemilik memutuskan |
 | `extended_until` terlewat        | Perlu keputusan (tanpa tenggang baru) | Normal sampai pemilik memutuskan |
 
+- Bukti bisa diunggah oleh penghuni aktif mana pun di kamar itu, dan berlaku untuk sewa kamarnya.
 - Bukti **disetujui:** `paid_until` maju `months_granted` bulan (default 1) dengan `addMonthsNoOverflow`. `extended_until` dikosongkan. Kalau sewa `inactive`, statusnya kembali `active` dan `deactivated_at`/`vacate_by` dikosongkan. Nilai sebelum/sesudah disimpan di `payment_proofs`.
 - Bukti **ditolak:** `review_note` wajib diisi sebagai alasan.
 - Kalau masih ada bukti `pending`, pemilik diminta memverifikasinya sebelum bisa menonaktifkan.
@@ -201,21 +230,38 @@ Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku ada
 
 ### Pengingat tanpa duplikat
 
-`reminder_logs` punya unique key `(tenancy_id, due_date, type)`. Scheduler yang berjalan dua kali tidak mengirim pengingat ganda.
+`reminder_logs` punya unique key `(tenancy_id, due_date, type)`. Scheduler yang berjalan dua kali tidak mengirim pengingat ganda. Satu pengingat dikirim ke semua penghuni aktif kamar itu, dan dicatat satu kali per sewa.
 
-### Penghuni keluar (status `ended`)
+### Penghuni keluar
 
-Hanya terjadi setelah pemilik mengonfirmasi kamar sudah kosong:
+Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setelah pemilik mengonfirmasi.
 
-1. Akun `users` penghuni dihapus. FK yang menunjuk ke akun itu otomatis menjadi `NULL` (`nullOnDelete`).
-2. `nickname` dan `notify_contact` dikosongkan, `status = ended`, dan `end_date` diisi.
-3. File bukti transfer dihapus (`file_path = NULL`, `file_deleted_at` diisi). Barisnya tetap ada.
+**Satu penghuni keluar, sewa berlanjut** (teman sekamarnya tetap tinggal):
+
+1. `moved_out_at` diisi.
+2. File bukti transfer yang diunggahnya dihapus (`file_path = NULL`, `file_deleted_at` diisi). Langkah ini dilakukan **sebelum** akun dihapus, karena setelah itu `uploaded_by` menjadi `NULL` dan file tidak bisa dilacak lagi ke pengunggahnya.
+3. Akun `users` penghuni itu dihapus. FK yang menunjuk ke akun itu otomatis menjadi `NULL` (`nullOnDelete`).
+4. `nickname` dan `notify_contact` di baris penghuninya dikosongkan.
+5. Sewa kamar dan `paid_until` tetap berjalan. Perubahan harga karena penghuni berkurang dicatat pemilik di luar sistem.
+
+**Semua penghuni keluar** (status `ended`), setelah pemilik mengonfirmasi kamar sudah kosong:
+
+1. Setiap penghuni aktif diproses seperti di atas.
+2. `status = ended` dan `end_date` diisi.
+3. Semua file bukti transfer sewa itu dihapus. Barisnya tetap ada.
 4. Riwayat keluhan, perawatan, dan masa sewa tetap tersimpan tanpa identitas.
+
+### Hapus data (foreign key)
+
+- FK ke `users` milik penghuni (`tenancy_occupants.user_id`, `payment_proofs.uploaded_by`, `complaints.reporter_id`): `nullOnDelete`, agar riwayat tetap ada setelah akun dihapus.
+- `properties.owner_id` dan `rooms.property_id`: `restrictOnDelete`. Akun pemilik dan kost tidak bisa terhapus selama masih punya kost atau kamar, sehingga riwayat sewa tidak ikut hilang.
+- `rooms` punya unique `(property_id, number)` agar tidak ada nomor kamar kembar dalam satu kost.
+- FK tabel lain ditentukan saat migration tabelnya dibuat.
 
 ### File
 
 - `room_photos`: disk `public`.
-- `complaint_photos` dan `payment_proofs`: disk privat. Hanya bisa dibuka lewat route yang mengecek Policy (pemilik, atau penghuni pemilik data). Batasi tipe file (jpg/png, bukti juga pdf) dan ukurannya, lalu ganti nama file saat disimpan.
+- `complaint_photos` dan `payment_proofs`: disk privat. Hanya bisa dibuka lewat route yang mengecek Policy. Foto keluhan: pemilik dan penghuni aktif kamar itu. Gambar bukti transfer: pemilik dan pengunggahnya saja, karena biasanya memuat nama dan nomor rekening bank. Batasi tipe file (jpg/png, bukti juga pdf) dan ukurannya, lalu ganti nama file saat disimpan.
 - File bukti transfer dihapus otomatis beberapa bulan setelah ditinjau. Catatannya tetap disimpan.
 
 ### Lain-lain
