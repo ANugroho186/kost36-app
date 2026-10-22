@@ -63,7 +63,7 @@ erDiagram
         bigint id PK
         bigint room_id FK
         date start_date
-        date paid_until
+        date paid_until "tanggal bayar berikutnya"
         date extended_until "nullable"
         string status "active, inactive, ended"
         timestamp deactivated_at "nullable"
@@ -211,6 +211,8 @@ CREATE UNIQUE INDEX tenancy_occupants_user_active_unique
 - Harga sewa (berbeda untuk 1 dan 2 orang) tidak disimpan dan tidak ditampilkan. Pemilik mencatatnya di luar sistem.
 
 ### Pembayaran dan masa tenggang
+
+`paid_until` adalah **tanggal bayar berikutnya** (jatuh tempo), bukan hari terakhir yang sudah dibayar. Contoh: penghuni masuk 1 Januari dan membayar 1 bulan di muka, maka `paid_until` = 1 Februari. Pada 1 Februari (H-0) penghuni masih lancar, dan baru terlambat mulai 2 Februari (H+1). Saat sewa dibuat, pemilik mengisi `paid_until` = `start_date` + jumlah bulan yang dibayar di muka.
 
 Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku adalah `extended_until` kalau terisi, selain itu `paid_until`.
 
