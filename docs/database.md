@@ -55,13 +55,13 @@ erDiagram
     }
     ROOM_PHOTOS {
         bigint id PK
-        bigint room_id FK
+        bigint room_id FK "cascadeOnDelete"
         string path "disk publik"
-        int sort_order
+        int sort_order "default 0"
     }
     TENANCIES {
         bigint id PK
-        bigint room_id FK
+        bigint room_id FK "restrictOnDelete"
         date start_date
         date paid_until "tanggal bayar berikutnya"
         date extended_until "nullable"
@@ -72,7 +72,7 @@ erDiagram
     }
     TENANCY_OCCUPANTS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "cascadeOnDelete"
         bigint user_id FK "nullable, nullOnDelete"
         string nickname "nullable"
         date moved_in_at
@@ -257,6 +257,8 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 
 - FK ke `users` milik penghuni (`tenancy_occupants.user_id`, `payment_proofs.uploaded_by`, `complaints.reporter_id`): `nullOnDelete`, agar riwayat tetap ada setelah akun dihapus.
 - `properties.owner_id` dan `rooms.property_id`: `restrictOnDelete`. Akun pemilik dan kost tidak bisa terhapus selama masih punya kost atau kamar, sehingga riwayat sewa tidak ikut hilang.
+- `tenancies.room_id`: `restrictOnDelete`. Kamar yang punya riwayat sewa tidak bisa dihapus.
+- `room_photos.room_id` dan `tenancy_occupants.tenancy_id`: `cascadeOnDelete`, karena barisnya adalah bagian dari kamar atau sewa. Cascade hanya menghapus baris database. File foto di disk tetap harus dihapus oleh aplikasi.
 - `rooms` punya unique `(property_id, number)` agar tidak ada nomor kamar kembar dalam satu kost.
 - FK tabel lain ditentukan saat migration tabelnya dibuat.
 
