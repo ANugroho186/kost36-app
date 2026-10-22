@@ -2,11 +2,11 @@
 
 ## Peran dan hak akses
 
-| Peran                    | Bisa                                                                                                                                                                                            | Tidak bisa                                                                                                                                  |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Publik** (tanpa login) | Melihat profil kost, foto, fasilitas, aturan, lokasi, dan status kamar (tersedia/terisi). Mengisi form survei/daftar tunggu                                                                     | Melihat siapa penghuni kamar mana                                                                                                           |
-| **Penghuni** (`tenant`)  | Melihat kamarnya sendiri dan tanggal `paid_until`. Mengunggah bukti transfer, melapor dan memantau keluhan, membaca pengumuman, membuka halaman "Data saya", mengatur notifikasi Telegram/email | Melihat data atau keluhan penghuni kamar lain. Melihat gambar bukti transfer dan kontak notifikasi teman sekamar. Menghapus akunnya sendiri |
-| **Pemilik** (`owner`)    | Semuanya: kamar dan foto, data sewa, verifikasi bukti, keputusan penonaktifan, keluhan, perawatan, inventaris, pengumuman, permintaan survei                                                    | —                                                                                                                                           |
+| Peran                    | Bisa                                                                                                                                                                                                                                                                       | Tidak bisa                                                                                                                                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Publik** (tanpa login) | Melihat profil kost, foto, fasilitas, aturan, lokasi, dan status kamar (tersedia/terisi). Mengisi form survei/daftar tunggu                                                                                                                                                | Melihat siapa penghuni kamar mana                                                                                                                                                                        |
+| **Penghuni** (`tenant`)  | Melihat kamarnya sendiri dan tanggal `paid_until`. Mengunggah bukti transfer, melapor dan memantau keluhan, membaca pengumuman, membuka halaman "Data saya", mengatur notifikasi Telegram/email, mendaftarkan dan memantau paket pesanannya, melaporkan paket salah terima | Melihat data atau keluhan penghuni kamar lain. Melihat gambar bukti transfer dan kontak notifikasi teman sekamar. Melihat paket pesanan penghuni lain, termasuk teman sekamar. Menghapus akunnya sendiri |
+| **Pemilik** (`owner`)    | Semuanya: kamar dan foto, data sewa, verifikasi bukti, keputusan penonaktifan, keluhan, perawatan, inventaris, pengumuman, permintaan survei, serta menerima paket penghuni (no. resi, nickname, kamar)                                                                    | Melihat nama/isi barang paket pesanan penghuni                                                                                                                                                           |
 
 - Akun penghuni dibuat oleh pemilik. Tidak ada registrasi publik.
 - Penghuni **nonaktif** tetap bisa login dengan akses terbatas: melihat info dan tanggal pengosongan, serta mengunggah bukti transfer.
@@ -39,6 +39,10 @@ Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu s
 | Bukti disetujui                 | Semua penghuni aktif                 | Sewa diperpanjang sampai `paid_until` baru          |
 | Bukti ditolak                   | Pengunggah                           | Hasil verifikasi dan alasan penolakan               |
 | Keluhan baru / selesai          | Pemilik / semua penghuni aktif kamar | Status keluhan                                      |
+| Paket didaftarkan               | Pemilik                              | No. resi, nickname, kamar, perkiraan tiba           |
+| Pemilik menerima paket          | Penghuni pemilik paket               | Paket sudah di rumah pemilik dan bisa diambil       |
+| Laporan paket salah terima      | Pemilik                              | Ada paket yang diterima orang yang salah            |
+| Laporan ditautkan ke paket      | Penghuni pemilik paket               | Paketnya salah diterima dan sedang diurus pemilik   |
 
 Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar.
 
@@ -134,6 +138,33 @@ Dipakai kalau satu orang pindah sementara teman sekamarnya tetap tinggal.
 3. Sistem mengisi `moved_out_at`, menghapus file bukti transfer yang pernah diunggahnya, menghapus akunnya, lalu mengosongkan nickname dan kontaknya. Detailnya ada di `docs/database.md` bagian "Penghuni keluar".
 4. Sewa kamar tetap `active` dengan `paid_until` yang sama. Harga untuk jumlah penghuni yang baru disepakati dan dicatat pemilik di luar sistem.
 5. Kalau ia penghuni aktif terakhir, pakai alur pengosongan di atas (sewa `ended`), bukan alur ini.
+
+## Alur paket pesanan
+
+```mermaid
+flowchart TD
+    A(["Penghuni mendaftarkan paket: no. resi, isi barang, perkiraan tiba"]) --> B["Notifikasi ke pemilik: no. resi, nickname, kamar"]
+    B --> C{"Siapa yang menerima paket?"}
+    C -- Pemilik kost --> D["Pemilik mencentang, held_by_owner_at diisi"]
+    D --> E[Notifikasi ke penghuni pemilik paket]
+    E --> F["Penghuni mengambil dan mencentang, collected_at diisi"]
+    C -- Penghuni pemilik paket --> G["Penghuni mencentang, collected_at diisi"]
+    G --> H["Dashboard pemilik: warna berbeda dan nickname penerima"]
+    C -- Penghuni lain --> J[Alur paket salah terima]
+    F --> K(["Data paket dihapus otomatis 30 hari setelah diambil"])
+    H --> K
+```
+
+Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya melihat no. resi, nickname, kamar, perkiraan tiba, dan status. Penghuni lain, termasuk teman sekamar, tidak melihat apa pun.
+
+### Paket salah terima
+
+1. Penghuni yang menerima paket bukan miliknya membuka halaman paket dan mengisi form "Saya menerima paket yang bukan milik saya", berisi no. resi atau nama di label. Ia tetap tidak bisa melihat daftar paket orang lain.
+2. Laporan disimpan di `parcel_reports`, dan pemilik menerima notifikasi.
+3. Pemilik mencocokkan laporan dengan daftar paket, lalu menautkannya ke paket yang benar (`parcel_id`).
+4. Saat laporan ditautkan, penghuni pemilik paket menerima notifikasi bahwa paketnya salah diterima dan sedang diurus pemilik. Identitas pelapor tidak disebutkan.
+5. Paket diserahkan ke pemilik, lalu pemilik mencentang "sudah di rumah" dan alur normal berlanjut. Laporan ditandai selesai (`resolved_at`).
+6. Kalau resinya tidak terdaftar oleh siapa pun, pemilik mengurusnya di luar sistem lalu menandai laporan selesai.
 
 ## Alur permintaan survei (publik)
 
