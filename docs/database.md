@@ -82,7 +82,7 @@ erDiagram
     }
     PAYMENT_PROOFS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "restrictOnDelete"
         bigint uploaded_by FK "nullable, nullOnDelete"
         string file_path "nullable, disk privat"
         string status "pending, approved, rejected"
@@ -95,7 +95,7 @@ erDiagram
     }
     TENANCY_DECISIONS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "restrictOnDelete"
         string type "extend, deactivate, reactivate, postpone_vacate, end"
         smallint days "nullable"
         date new_date "nullable"
@@ -104,7 +104,7 @@ erDiagram
     }
     REMINDER_LOGS {
         bigint id PK
-        bigint tenancy_id FK
+        bigint tenancy_id FK "cascadeOnDelete"
         date due_date
         string type "H-3, H-0, H+1, H+4, H+7, H+10"
         timestamp sent_at
@@ -258,6 +258,8 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 - FK ke `users` milik penghuni (`tenancy_occupants.user_id`, `payment_proofs.uploaded_by`, `complaints.reporter_id`): `nullOnDelete`, agar riwayat tetap ada setelah akun dihapus.
 - `properties.owner_id` dan `rooms.property_id`: `restrictOnDelete`. Akun pemilik dan kost tidak bisa terhapus selama masih punya kost atau kamar, sehingga riwayat sewa tidak ikut hilang.
 - `tenancies.room_id`: `restrictOnDelete`. Kamar yang punya riwayat sewa tidak bisa dihapus.
+- `payment_proofs.tenancy_id` dan `tenancy_decisions.tenancy_id`: `restrictOnDelete`. Bukti pembayaran (beserta filenya) dan jejak keputusan pemilik tidak boleh ikut hilang diam-diam.
+- `reminder_logs.tenancy_id`: `cascadeOnDelete`, karena isinya hanya data teknis untuk mencegah pengingat ganda.
 - `room_photos.room_id` dan `tenancy_occupants.tenancy_id`: `cascadeOnDelete`, karena barisnya adalah bagian dari kamar atau sewa. Cascade hanya menghapus baris database. File foto di disk tetap harus dihapus oleh aplikasi.
 - `rooms` punya unique `(property_id, number)` agar tidak ada nomor kamar kembar dalam satu kost.
 - FK tabel lain ditentukan saat migration tabelnya dibuat.
