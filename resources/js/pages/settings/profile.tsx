@@ -1,6 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,23 @@ export default function Profile() {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
+                                <Label htmlFor="username">Username</Label>
+
+                                {/* disabled: tidak ikut terkirim, dan server juga mengabaikannya. */}
+                                <Input
+                                    id="username"
+                                    className="mt-1 block w-full"
+                                    defaultValue={auth.user.username}
+                                    disabled
+                                />
+
+                                <p className="text-sm text-muted-foreground">
+                                    Your username is managed by the property
+                                    owner.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
 
                                 <Input
@@ -58,18 +74,24 @@ export default function Profile() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">
+                                    Email address (optional)
+                                </Label>
 
                                 <Input
                                     id="email"
                                     type="email"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.email}
+                                    defaultValue={auth.user.email ?? ''}
                                     name="email"
-                                    required
-                                    autoComplete="username"
+                                    autoComplete="email"
                                     placeholder="Email address"
                                 />
+
+                                <p className="text-sm text-muted-foreground">
+                                    Used to reset your password. Leave it empty
+                                    if you don't have one.
+                                </p>
 
                                 <InputError
                                     className="mt-2"
@@ -89,8 +111,6 @@ export default function Profile() {
                     )}
                 </Form>
             </div>
-
-            <DeleteUser />
         </>
     );
 }

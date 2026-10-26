@@ -38,8 +38,9 @@ trait ProfileValidationRules
      */
     protected function emailRules(?int $userId = null): array
     {
+        // Email opsional: akun tanpa email tetap bisa login dengan username.
         return [
-            'required',
+            'nullable',
             'string',
             'email',
             'max:255',

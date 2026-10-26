@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Responses\PasswordResetLinkRequestResponse;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
@@ -23,6 +24,37 @@ test('reset password link can be requested', function () {
     $this->post(route('password.email'), ['email' => $user->email]);
 
     Notification::assertSentTo($user, ResetPassword::class);
+});
+
+test('reset link requests do not reveal whether an email is registered', function () {
+    Notification::fake();
+
+    $user = User::factory()->create(['email' => 'budi@example.com']);
+
+    $this->post(route('password.email'), ['email' => 'budi@example.com'])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', PasswordResetLinkRequestResponse::MESSAGE);
+
+    $this->post(route('password.email'), ['email' => 'tidak-terdaftar@example.com'])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', PasswordResetLinkRequestResponse::MESSAGE);
+
+    Notification::assertSentTo($user, ResetPassword::class);
+    Notification::assertSentTimes(ResetPassword::class, 1);
+});
+
+test('throttled reset link requests look the same as successful ones', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->post(route('password.email'), ['email' => $user->email]);
+
+    $this->post(route('password.email'), ['email' => $user->email])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', PasswordResetLinkRequestResponse::MESSAGE);
+
+    Notification::assertSentTimes(ResetPassword::class, 1);
 });
 
 test('reset password screen can be rendered', function () {

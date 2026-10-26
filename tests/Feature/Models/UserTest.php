@@ -32,3 +32,21 @@ test('username must be unique', function () {
 
     User::factory()->create(['username' => 'penghuni']);
 })->throws(UniqueConstraintViolationException::class);
+
+test('usernames are stored in lowercase', function () {
+    $user = User::factory()->create(['username' => 'Budi']);
+
+    expect($user->fresh()->username)->toBe('budi');
+});
+
+test('emails are stored in lowercase', function () {
+    $user = User::factory()->create(['email' => 'Budi@Example.com']);
+
+    expect($user->fresh()->email)->toBe('budi@example.com');
+});
+
+test('usernames that differ only in case are duplicates', function () {
+    User::factory()->create(['username' => 'budi']);
+
+    User::factory()->create(['username' => 'Budi']);
+})->throws(UniqueConstraintViolationException::class);
