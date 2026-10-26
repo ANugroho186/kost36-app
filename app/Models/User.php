@@ -104,6 +104,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Sewa yang sedang ditempati user ini (beserta kamarnya), atau null kalau bukan penghuni.
+     * Selalu query ulang, sama seperti occupies().
+     */
+    public function currentTenancy(): ?Tenancy
+    {
+        return $this->currentOccupancy()->with('tenancy.room')->first()?->tenancy;
+    }
+
+    /**
      * Kost yang dimiliki user ini (hanya untuk pemilik).
      *
      * @return HasMany<Property, $this>

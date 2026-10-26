@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Room;
 use App\Models\Tenancy;
 use App\Models\TenancyOccupant;
 use App\Models\User;
@@ -58,13 +59,15 @@ expect()->extend('toViolateForeignKey', function () {
 
 /**
  * Skenario hak akses: satu sewa berisi dua penghuni (teman sekamar), satu penghuni yang
- * sudah keluar dari sewa itu, dan satu penghuni kamar lain.
+ * sudah keluar dari sewa itu, dan satu tetangga di kamar lain pada kost yang sama.
  *
  * @return array{owner: User, tenancy: Tenancy, occupant: User, roommate: User, formerOccupant: User, otherTenant: User}
  */
 function accessScenario(): array
 {
     $tenancy = Tenancy::factory()->create();
+    // Kamar lain di kost yang sama: kasus IDOR paling nyata adalah tetangga kamar, bukan penghuni kost lain.
+    $neighbourTenancy = Tenancy::factory()->for(Room::factory()->for($tenancy->room->property))->create();
 
     return [
         'owner' => User::factory()->owner()->create(),
@@ -72,6 +75,6 @@ function accessScenario(): array
         'occupant' => TenancyOccupant::factory()->for($tenancy)->create()->user,
         'roommate' => TenancyOccupant::factory()->for($tenancy)->create()->user,
         'formerOccupant' => TenancyOccupant::factory()->for($tenancy)->movedOut()->create()->user,
-        'otherTenant' => TenancyOccupant::factory()->create()->user,
+        'otherTenant' => TenancyOccupant::factory()->for($neighbourTenancy)->create()->user,
     ];
 }
