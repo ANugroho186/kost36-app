@@ -58,6 +58,11 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     <span>Or, return to</span>
                     <TextLink href={login()}>log in</TextLink>
                 </div>
+
+                <p className="text-center text-sm text-muted-foreground">
+                    No email on your account? Ask the property owner to reset
+                    your password.
+                </p>
             </div>
         </>
     );

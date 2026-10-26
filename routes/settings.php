@@ -12,9 +12,8 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
+// Tidak ada route hapus akun sendiri: akun hanya dihapus lewat alur pemilik saat penghuni keluar.
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
     Route::get('settings/security', [SecurityController::class, 'edit'])
         ->middleware(RequirePassword::class)
         ->name('security.edit');

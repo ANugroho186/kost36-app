@@ -115,36 +115,12 @@ test('username cannot be changed from the profile', function () {
     expect($user->refresh()->username)->toBe('budi');
 });
 
-test('user can delete their account', function () {
+test('users cannot delete their own account', function () {
     $user = User::factory()->create();
 
-    $response = $this
-        ->actingAs($user)
-        ->delete(route('profile.destroy'), [
-            'password' => 'password',
-        ]);
-
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('home'));
-
-    $this->assertGuest();
-    expect($user->fresh())->toBeNull();
-});
-
-test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->from(route('profile.edit'))
-        ->delete(route('profile.destroy'), [
-            'password' => 'wrong-password',
-        ]);
-
-    $response
-        ->assertSessionHasErrors('password')
-        ->assertRedirect(route('profile.edit'));
+    $this->actingAs($user)
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertMethodNotAllowed();
 
     expect($user->fresh())->not->toBeNull();
 });
