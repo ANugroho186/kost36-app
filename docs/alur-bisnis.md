@@ -27,6 +27,35 @@ Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu s
 | Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
 | Kontak notifikasi (`notify_contact`)               | Tidak                                                                                                                              |
 
+### Matriks hak akses
+
+Semua aturan ini dicek di server lewat Policy (`app/Policies`) dan diuji untuk setiap jenis pengguna di `tests/Feature/Policies`. "Penghuni" berarti penghuni yang belum keluar dari sewa `active`/`inactive`. Penghuni yang sudah keluar tidak punya akses apa pun ke data kamar lamanya.
+
+| Aksi                                | Pemilik kost                | Penghuni (dirinya/kamarnya)        | Teman sekamar        | Penghuni kamar lain  |
+| ----------------------------------- | --------------------------- | ---------------------------------- | -------------------- | -------------------- |
+| Lihat sewa dan `paid_until`         | Ya                          | Ya                                 | Ya                   | Tidak                |
+| Kelola sewa (buat, ubah, keputusan) | Ya                          | Tidak                              | Tidak                | Tidak                |
+| Lihat status bukti transfer         | Ya                          | Ya                                 | Ya                   | Tidak                |
+| Buka gambar bukti transfer          | Ya                          | Hanya pengunggah                   | Tidak                | Tidak                |
+| Unggah bukti transfer               | Ya, atas nama penghuni      | Ya                                 | Ya                   | Tidak                |
+| Setujui/tolak bukti                 | Ya, hanya yang `pending`    | Tidak                              | Tidak                | Tidak                |
+| Lihat keluhan kamar                 | Ya                          | Ya, selama sewa berjalan           | Ya                   | Tidak                |
+| Lapor keluhan                       | Ya, atas nama penghuni      | Ya                                 | Ya                   | Tidak                |
+| Ubah status atau hapus keluhan      | Ya                          | Tidak                              | Tidak                | Tidak                |
+| Baca pengumuman                     | Ya, termasuk yang terjadwal | Ya, yang sudah tayang              | Ya                   | Ya, kost yang sama   |
+| Kelola pengumuman                   | Ya                          | Tidak                              | Tidak                | Tidak                |
+| Lihat paket (resi, status)          | Ya, semua paket             | Paketnya sendiri                   | Tidak                | Tidak                |
+| Lihat nama/isi barang paket         | **Tidak**                   | Paketnya sendiri                   | Tidak                | Tidak                |
+| Daftarkan paket                     | Tidak                       | Ya, paketnya sendiri               | Ya, paketnya sendiri | Ya, paketnya sendiri |
+| Ubah atau batalkan paket            | Tidak                       | Paketnya sendiri, selama menunggu  | Tidak                | Tidak                |
+| Centang "sudah di rumah pemilik"    | Ya, selama menunggu         | Tidak                              | Tidak                | Tidak                |
+| Centang "sudah diterima"            | Tidak                       | Paketnya sendiri, sebelum diterima | Tidak                | Tidak                |
+| Laporkan paket salah terima         | Tidak                       | Ya                                 | Ya                   | Ya                   |
+| Lihat laporan salah terima          | Ya                          | Hanya pelapor                      | Tidak                | Tidak                |
+| Tautkan atau selesaikan laporan     | Ya, selama belum selesai    | Tidak                              | Tidak                | Tidak                |
+
+Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()`), karena ada data yang memang tidak boleh ia lihat, yaitu isi paket penghuni.
+
 ## Jadwal notifikasi
 
 | Waktu (relatif ke `paid_until`) | Penerima                             | Isi                                                 |
