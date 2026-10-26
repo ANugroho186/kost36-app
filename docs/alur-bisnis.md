@@ -198,7 +198,8 @@ Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya m
 
 ## Alur permintaan survei (publik)
 
-1. Calon penyewa mengisi form: nama, kontak, tanggal survei yang diinginkan, pesan. Form diberi rate limit untuk mencegah spam.
-2. Disimpan di `rental_inquiries` dengan status `new`, dan pemilik menerima notifikasi.
-3. Pemilik menghubungi, lalu mengubah status ke `contacted` dan akhirnya `done`.
-4. Data dihapus otomatis beberapa waktu setelah `done`.
+1. Calon penyewa mengisi form di halaman publik: nama dan kontak (nomor WhatsApp atau email) wajib, sedangkan tanggal survei (tidak boleh tanggal lampau) dan pesan opsional. Form menampilkan catatan bahwa data hanya dipakai untuk mengatur survei dan dihapus 30 hari setelah selesai.
+2. Form dibatasi **5 kiriman per jam per alamat IP** (`throttle:rental-inquiries`). Kiriman ke-6 ditolak dengan HTTP 429.
+3. Disimpan di `rental_inquiries` dengan status `new`. Status dan `done_at` tidak bisa diisi dari form. Pemilik menerima notifikasi (dibuat bersama sistem notifikasi di Fase 3).
+4. Pemilik menghubungi, lalu mengubah status ke `contacted` dan akhirnya `done` (`done_at` diisi).
+5. Data dihapus otomatis 30 hari setelah `done_at`.
