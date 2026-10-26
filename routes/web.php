@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\RentalInquiryController;
 use Illuminate\Support\Facades\Route;
@@ -12,7 +13,7 @@ Route::post('inquiries', [RentalInquiryController::class, 'store'])
     ->name('rental-inquiries.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 });
 
 require __DIR__.'/settings.php';
