@@ -45,7 +45,8 @@ return [
     |
     */
 
-    'username' => 'email',
+    // Login memakai username. Email opsional dan hanya dipakai untuk reset password.
+    'username' => 'username',
 
     'email' => 'email',
 
