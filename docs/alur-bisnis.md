@@ -9,7 +9,8 @@
 | **Pemilik** (`owner`)    | Semuanya: kamar dan foto, data sewa, verifikasi bukti, keputusan penonaktifan, keluhan, perawatan, inventaris, pengumuman, permintaan survei, serta menerima paket penghuni (no. resi, nickname, kamar)                                                                    | Melihat nama/isi barang paket pesanan penghuni                                                                                                                                                           |
 
 - Akun penghuni dibuat oleh pemilik. Tidak ada registrasi publik.
-- Penghuni **nonaktif** tetap bisa login dengan akses terbatas: melihat info dan tanggal pengosongan, serta mengunggah bukti transfer.
+- Hak penghuni berlaku selama ia **belum keluar** (`moved_out_at` kosong) dari sewa yang masih menempati kamar (`active` atau `inactive`). Begitu keluar atau sewanya `ended`, aksesnya ke data kamar itu tertutup.
+- Penghuni **nonaktif** tetap bisa memakai semua fitur penghuni sampai tanggal pengosongan: melihat info sewa, mengunggah bukti transfer, membaca pengumuman, memakai fitur paket, dan melapor keluhan. Halamannya menonjolkan tanggal pengosongan.
 - Penghuni tanpa akun tetap tercatat. Pemilik yang mencatat keluhan atau pembayarannya.
 - Halaman "Data saya" menampilkan semua data tentang penghuni itu yang tersimpan di sistem (data penghuninya sendiri dan data sewa kamarnya), sebagai bentuk transparansi.
 
@@ -17,14 +18,43 @@
 
 Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu sewa dan satu tagihan bersama. Kedua penghuni bisa mengunggah bukti transfer, dan bukti dari siapa pun memajukan `paid_until` kamar itu.
 
-| Data                                               | Terlihat oleh teman sekamar?                                    |
-| -------------------------------------------------- | --------------------------------------------------------------- |
-| Nickname                                           | Ya                                                              |
-| Tanggal `paid_until` dan status sewa               | Ya                                                              |
-| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama                     |
-| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                              |
-| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank) |
-| Kontak notifikasi (`notify_contact`)               | Tidak                                                           |
+| Data                                               | Terlihat oleh teman sekamar?                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Nickname                                           | Ya                                                                                                                                 |
+| Tanggal `paid_until` dan status sewa               | Ya                                                                                                                                 |
+| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama. Hanya keluhan selama sewa yang sedang berjalan, bukan keluhan penghuni lama kamar itu |
+| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                                                                                                 |
+| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
+| Kontak notifikasi (`notify_contact`)               | Tidak                                                                                                                              |
+
+### Matriks hak akses
+
+Semua aturan ini dicek di server lewat Policy (`app/Policies`) dan diuji untuk setiap jenis pengguna di `tests/Feature/Policies`. "Penghuni" berarti penghuni yang belum keluar dari sewa `active`/`inactive`. Penghuni yang sudah keluar tidak punya akses apa pun ke data kamar lamanya.
+
+| Aksi                                | Pemilik kost                | Penghuni (dirinya/kamarnya)        | Teman sekamar        | Penghuni kamar lain  |
+| ----------------------------------- | --------------------------- | ---------------------------------- | -------------------- | -------------------- |
+| Lihat sewa dan `paid_until`         | Ya                          | Ya                                 | Ya                   | Tidak                |
+| Kelola sewa (buat, ubah, keputusan) | Ya                          | Tidak                              | Tidak                | Tidak                |
+| Lihat status bukti transfer         | Ya                          | Ya                                 | Ya                   | Tidak                |
+| Buka gambar bukti transfer          | Ya                          | Hanya pengunggah                   | Tidak                | Tidak                |
+| Unggah bukti transfer               | Ya, atas nama penghuni      | Ya                                 | Ya                   | Tidak                |
+| Setujui/tolak bukti                 | Ya, hanya yang `pending`    | Tidak                              | Tidak                | Tidak                |
+| Lihat keluhan kamar                 | Ya                          | Ya, selama sewa berjalan           | Ya                   | Tidak                |
+| Lapor keluhan                       | Ya, atas nama penghuni      | Ya                                 | Ya                   | Tidak                |
+| Ubah status atau hapus keluhan      | Ya                          | Tidak                              | Tidak                | Tidak                |
+| Baca pengumuman                     | Ya, termasuk yang terjadwal | Ya, yang sudah tayang              | Ya                   | Ya, kost yang sama   |
+| Kelola pengumuman                   | Ya                          | Tidak                              | Tidak                | Tidak                |
+| Lihat paket (resi, status)          | Ya, semua paket             | Paketnya sendiri                   | Tidak                | Tidak                |
+| Lihat nama/isi barang paket         | **Tidak**                   | Paketnya sendiri                   | Tidak                | Tidak                |
+| Daftarkan paket                     | Tidak                       | Ya, paketnya sendiri               | Ya, paketnya sendiri | Ya, paketnya sendiri |
+| Ubah atau batalkan paket            | Tidak                       | Paketnya sendiri, selama menunggu  | Tidak                | Tidak                |
+| Centang "sudah di rumah pemilik"    | Ya, selama menunggu         | Tidak                              | Tidak                | Tidak                |
+| Centang "sudah diterima"            | Tidak                       | Paketnya sendiri, sebelum diterima | Tidak                | Tidak                |
+| Laporkan paket salah terima         | Tidak                       | Ya                                 | Ya                   | Ya                   |
+| Lihat laporan salah terima          | Ya                          | Hanya pelapor                      | Tidak                | Tidak                |
+| Tautkan atau selesaikan laporan     | Ya, selama belum selesai    | Tidak                              | Tidak                | Tidak                |
+
+Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()`), karena ada data yang memang tidak boleh ia lihat, yaitu isi paket penghuni.
 
 ## Jadwal notifikasi
 

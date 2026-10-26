@@ -7,9 +7,11 @@ use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -72,6 +74,42 @@ class User extends Authenticatable
     protected function email(): Attribute
     {
         return Attribute::set(fn (?string $value): ?string => $value === null ? null : Str::lower($value));
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->role === UserRole::Owner;
+    }
+
+    /**
+     * Data penghuni yang sedang berlaku: belum keluar, dari sewa yang masih menempati kamar.
+     * Paling banyak satu, dijaga partial unique index di tenancy_occupants.
+     *
+     * @return HasOne<TenancyOccupant, $this>
+     */
+    public function currentOccupancy(): HasOne
+    {
+        return $this->hasOne(TenancyOccupant::class)
+            ->whereNull('moved_out_at')
+            ->whereHas('tenancy', fn (Builder $query) => $query->occupying());
+    }
+
+    /**
+     * Apakah user ini penghuni yang sedang berlaku dari sewa tersebut.
+     * Selalu query ulang, supaya tidak memakai data relasi lama yang tersimpan di model.
+     */
+    public function occupies(Tenancy $tenancy): bool
+    {
+        return $this->currentOccupancy()->where('tenancy_id', $tenancy->id)->exists();
+    }
+
+    /**
+     * Sewa yang sedang ditempati user ini (beserta kamarnya), atau null kalau bukan penghuni.
+     * Selalu query ulang, sama seperti occupies().
+     */
+    public function currentTenancy(): ?Tenancy
+    {
+        return $this->currentOccupancy()->with('tenancy.room')->first()?->tenancy;
     }
 
     /**
