@@ -6,6 +6,7 @@ use App\Enums\TenancyStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenancyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -56,6 +57,17 @@ class Tenancy extends Model
             'vacate_by' => 'date',
             'end_date' => 'date',
         ];
+    }
+
+    /**
+     * Sewa yang masih menempati kamar: active atau inactive.
+     * Penghuni sewa nonaktif masih tinggal sampai vacate_by.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeOccupying(Builder $query): void
+    {
+        $query->whereIn('status', [TenancyStatus::Active, TenancyStatus::Inactive]);
     }
 
     /**

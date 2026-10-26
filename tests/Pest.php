@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Tenancy;
+use App\Models\TenancyOccupant;
+use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -53,7 +56,22 @@ expect()->extend('toViolateForeignKey', function () {
 |
 */
 
-function something()
+/**
+ * Skenario hak akses: satu sewa berisi dua penghuni (teman sekamar), satu penghuni yang
+ * sudah keluar dari sewa itu, dan satu penghuni kamar lain.
+ *
+ * @return array{owner: User, tenancy: Tenancy, occupant: User, roommate: User, formerOccupant: User, otherTenant: User}
+ */
+function accessScenario(): array
 {
-    // ..
+    $tenancy = Tenancy::factory()->create();
+
+    return [
+        'owner' => User::factory()->owner()->create(),
+        'tenancy' => $tenancy,
+        'occupant' => TenancyOccupant::factory()->for($tenancy)->create()->user,
+        'roommate' => TenancyOccupant::factory()->for($tenancy)->create()->user,
+        'formerOccupant' => TenancyOccupant::factory()->for($tenancy)->movedOut()->create()->user,
+        'otherTenant' => TenancyOccupant::factory()->create()->user,
+    ];
 }
