@@ -5,6 +5,7 @@ namespace App\Http\Requests\Settings;
 use App\Concerns\ProfileValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -18,5 +19,18 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return $this->profileRules($this->user()->id);
+    }
+
+    /**
+     * Email dikecilkan sebelum divalidasi. Kalau baru dikecilkan saat disimpan,
+     * "Budi@Example.com" lolos cek unik lalu gagal di database dengan error 500.
+     */
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge(['email' => Str::lower($email)]);
+        }
     }
 }

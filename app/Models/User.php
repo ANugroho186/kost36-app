@@ -65,6 +65,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Email juga disimpan huruf kecil, karena Fortify mengecilkan input di form lupa password.
+     *
+     * @return Attribute<never, string|null>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::set(fn (?string $value): ?string => $value === null ? null : Str::lower($value));
+    }
+
+    /**
      * Kost yang dimiliki user ini (hanya untuk pemilik).
      *
      * @return HasMany<Property, $this>

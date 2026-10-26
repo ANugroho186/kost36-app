@@ -39,6 +39,12 @@ test('usernames are stored in lowercase', function () {
     expect($user->fresh()->username)->toBe('budi');
 });
 
+test('emails are stored in lowercase', function () {
+    $user = User::factory()->create(['email' => 'Budi@Example.com']);
+
+    expect($user->fresh()->email)->toBe('budi@example.com');
+});
+
 test('usernames that differ only in case are duplicates', function () {
     User::factory()->create(['username' => 'budi']);
 
