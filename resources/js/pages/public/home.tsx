@@ -1,6 +1,9 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { BedDouble, MapPin, ScrollText, Users } from 'lucide-react';
+import RentalInquiryController from '@/actions/App/Http/Controllers/RentalInquiryController';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -8,6 +11,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { dashboard, login } from '@/routes';
 
 // Bentuk data ini sama persis dengan yang dikirim PublicPropertyController.
@@ -39,6 +46,103 @@ function capacityLabel(capacity: number): string {
 
 function mapsUrl(address: string): string {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
+function ViewingRequestForm() {
+    // Format YYYY-MM-DD menurut tanggal di perangkat pengunjung, untuk batas bawah kalender.
+    const today = new Date().toLocaleDateString('en-CA');
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>
+                    <h2 id="viewing-heading">Request a viewing</h2>
+                </CardTitle>
+                <CardDescription>
+                    Leave your contact details and we will get back to you to
+                    arrange a visit.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form
+                    {...RentalInquiryController.store.form()}
+                    resetOnSuccess
+                    options={{ preserveScroll: true }}
+                    className="space-y-4"
+                >
+                    {({ processing, errors }) => (
+                        <>
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    required
+                                    maxLength={100}
+                                    autoComplete="name"
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="contact">
+                                    WhatsApp number or email
+                                </Label>
+                                <Input
+                                    id="contact"
+                                    name="contact"
+                                    required
+                                    maxLength={100}
+                                />
+                                <InputError message={errors.contact} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="preferred_date">
+                                    Preferred viewing date (optional)
+                                </Label>
+                                <Input
+                                    id="preferred_date"
+                                    name="preferred_date"
+                                    type="date"
+                                    min={today}
+                                />
+                                <InputError message={errors.preferred_date} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="message">
+                                    Message (optional)
+                                </Label>
+                                <Textarea
+                                    id="message"
+                                    name="message"
+                                    rows={3}
+                                    maxLength={1000}
+                                />
+                                <InputError message={errors.message} />
+                            </div>
+
+                            <p className="text-xs text-muted-foreground">
+                                We only use these details to arrange your
+                                viewing, and delete them 30 days after we are
+                                done.
+                            </p>
+
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="w-full sm:w-auto"
+                            >
+                                {processing && <Spinner />}
+                                Send request
+                            </Button>
+                        </>
+                    )}
+                </Form>
+            </CardContent>
+        </Card>
+    );
 }
 
 export default function Home({ property, rooms, summary }: Props) {
@@ -143,6 +247,10 @@ export default function Home({ property, rooms, summary }: Props) {
                                         ))}
                                     </div>
                                 )}
+                            </section>
+
+                            <section aria-labelledby="viewing-heading">
+                                <ViewingRequestForm />
                             </section>
 
                             <section
