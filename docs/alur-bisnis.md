@@ -9,7 +9,8 @@
 | **Pemilik** (`owner`)    | Semuanya: kamar dan foto, data sewa, verifikasi bukti, keputusan penonaktifan, keluhan, perawatan, inventaris, pengumuman, permintaan survei, serta menerima paket penghuni (no. resi, nickname, kamar)                                                                    | Melihat nama/isi barang paket pesanan penghuni                                                                                                                                                           |
 
 - Akun penghuni dibuat oleh pemilik. Tidak ada registrasi publik.
-- Penghuni **nonaktif** tetap bisa login dengan akses terbatas: melihat info dan tanggal pengosongan, serta mengunggah bukti transfer.
+- Hak penghuni berlaku selama ia **belum keluar** (`moved_out_at` kosong) dari sewa yang masih menempati kamar (`active` atau `inactive`). Begitu keluar atau sewanya `ended`, aksesnya ke data kamar itu tertutup.
+- Penghuni **nonaktif** tetap bisa memakai semua fitur penghuni sampai tanggal pengosongan: melihat info sewa, mengunggah bukti transfer, membaca pengumuman, memakai fitur paket, dan melapor keluhan. Halamannya menonjolkan tanggal pengosongan.
 - Penghuni tanpa akun tetap tercatat. Pemilik yang mencatat keluhan atau pembayarannya.
 - Halaman "Data saya" menampilkan semua data tentang penghuni itu yang tersimpan di sistem (data penghuninya sendiri dan data sewa kamarnya), sebagai bentuk transparansi.
 
@@ -17,14 +18,14 @@
 
 Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu sewa dan satu tagihan bersama. Kedua penghuni bisa mengunggah bukti transfer, dan bukti dari siapa pun memajukan `paid_until` kamar itu.
 
-| Data                                               | Terlihat oleh teman sekamar?                                    |
-| -------------------------------------------------- | --------------------------------------------------------------- |
-| Nickname                                           | Ya                                                              |
-| Tanggal `paid_until` dan status sewa               | Ya                                                              |
-| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama                     |
-| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                              |
-| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank) |
-| Kontak notifikasi (`notify_contact`)               | Tidak                                                           |
+| Data                                               | Terlihat oleh teman sekamar?                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Nickname                                           | Ya                                                                                                                                 |
+| Tanggal `paid_until` dan status sewa               | Ya                                                                                                                                 |
+| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama. Hanya keluhan selama sewa yang sedang berjalan, bukan keluhan penghuni lama kamar itu |
+| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                                                                                                 |
+| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
+| Kontak notifikasi (`notify_contact`)               | Tidak                                                                                                                              |
 
 ## Jadwal notifikasi
 
