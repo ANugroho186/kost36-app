@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { BedDouble, Building2, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,17 +13,37 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { edit as editProperty } from '@/routes/owner/property';
+import { index as rooms } from '@/routes/owner/rooms';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const dashboardItem: NavItem = {
+    title: 'Dashboard',
+    href: dashboard(),
+    icon: LayoutGrid,
+};
+
+// Menu ini hanya soal tampilan. Hak akses tetap dicek di server lewat Policy.
+const ownerNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        title: 'Property',
+        href: editProperty(),
+        icon: Building2,
+    },
+    {
+        title: 'Rooms',
+        href: rooms(),
+        icon: BedDouble,
     },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const mainNavItems =
+        auth.user.role === 'owner'
+            ? [dashboardItem, ...ownerNavItems]
+            : [dashboardItem];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

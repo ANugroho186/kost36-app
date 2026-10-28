@@ -40,6 +40,26 @@ class Room extends Model
     }
 
     /**
+     * Jumlah penghuni yang sedang tinggal (dari sewa active/inactive), 0 kalau kamar kosong.
+     */
+    public function activeOccupantCount(): int
+    {
+        return $this->tenancies()->occupying()->first()?->activeOccupants()->count() ?? 0;
+    }
+
+    /**
+     * Kamar dengan data terkait tidak bisa dihapus (restrictOnDelete), jadi dicek lebih dulu
+     * agar pemilik mendapat pesan yang jelas, bukan error database.
+     */
+    public function hasRelatedRecords(): bool
+    {
+        return $this->tenancies()->exists()
+            || $this->complaints()->exists()
+            || $this->maintenanceLogs()->exists()
+            || $this->inventoryItems()->exists();
+    }
+
+    /**
      * @return BelongsTo<Property, $this>
      */
     public function property(): BelongsTo
