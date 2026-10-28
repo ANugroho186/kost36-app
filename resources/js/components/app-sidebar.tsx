@@ -1,7 +1,6 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { BedDouble, Building2, KeyRound, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -14,30 +13,43 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { edit as editProperty } from '@/routes/owner/property';
+import { index as rooms } from '@/routes/owner/rooms';
+import { index as tenancies } from '@/routes/owner/tenancies';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+const dashboardItem: NavItem = {
+    title: 'Dashboard',
+    href: dashboard(),
+    icon: LayoutGrid,
+};
 
-const footerNavItems: NavItem[] = [
+// Menu ini hanya soal tampilan. Hak akses tetap dicek di server lewat Policy.
+const ownerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
+        title: 'Property',
+        href: editProperty(),
+        icon: Building2,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Rooms',
+        href: rooms(),
+        icon: BedDouble,
+    },
+    {
+        title: 'Tenancies',
+        href: tenancies(),
+        icon: KeyRound,
     },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const mainNavItems =
+        auth.user.role === 'owner'
+            ? [dashboardItem, ...ownerNavItems]
+            : [dashboardItem];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -57,7 +69,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

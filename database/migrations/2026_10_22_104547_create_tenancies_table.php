@@ -19,6 +19,8 @@ return new class extends Migration
             $table->date('paid_until');
             $table->date('extended_until')->nullable();
             $table->string('status');
+            // "Bersedia berbagi kamar": orang kedua hanya bisa ditambahkan kalau true.
+            $table->boolean('accepts_roommate')->default(false);
             $table->timestamp('deactivated_at')->nullable();
             $table->date('vacate_by')->nullable();
             $table->date('end_date')->nullable();

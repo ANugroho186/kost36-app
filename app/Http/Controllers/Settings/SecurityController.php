@@ -38,9 +38,11 @@ class SecurityController extends Controller
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        // Password pilihan sendiri, jadi pengingat "password sementara" di dashboard ikut hilang.
+        $request->user()->forceFill([
             'password' => $request->password,
-        ]);
+            'has_temporary_password' => false,
+        ])->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
 

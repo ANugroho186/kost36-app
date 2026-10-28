@@ -38,6 +38,7 @@ erDiagram
         string username UK
         string email UK "nullable"
         string password "hash"
+        boolean has_temporary_password "default false"
         string role "owner atau tenant, default tenant"
     }
     PROPERTIES {
@@ -69,6 +70,7 @@ erDiagram
         date paid_until "tanggal bayar berikutnya"
         date extended_until "nullable"
         string status "active, inactive, ended"
+        boolean accepts_roommate "bersedia berbagi kamar, default false"
         timestamp deactivated_at "nullable"
         date vacate_by "nullable"
         date end_date "nullable"
@@ -199,7 +201,7 @@ Hanya ini:
 
 - **Terisi:** kamar punya sewa berstatus `active` atau `inactive`. Penghuni nonaktif masih menempati kamar sampai `vacate_by`.
 - **Tersedia:** tidak ada sewa seperti itu.
-- Jumlah penghuni tidak memengaruhi status. Kamar berisi 1 orang tetap **terisi**, karena penghuni kedua hanya masuk bersama atau atas ajakan penghuni pertama.
+- Jumlah penghuni tidak memengaruhi status. Kamar berisi 1 orang tetap **terisi**, karena penghuni kedua hanya masuk bersama atau atas ajakan penghuni pertama. Ini berlaku juga untuk kamar yang `accepts_roommate = true`: tempat sisa tidak ditawarkan ke publik.
 - `rooms.is_published = false` (default) menyembunyikan kamar dari halaman publik, sehingga kamar baru tidak tampil sebelum pemilik siap.
 - Halaman publik hanya menampilkan "tersedia/terisi", tanpa nama penghuni.
 
@@ -219,7 +221,11 @@ Satu sewa (`tenancies`) adalah satu tagihan untuk satu kamar. Orang yang tinggal
 
 - **Penghuni aktif:** baris dengan `moved_out_at` kosong. Jumlahnya maksimal `rooms.capacity` (default 2).
 - Batas jumlah dicek di aplikasi saat pemilik menambah penghuni, di dalam transaksi yang mengunci baris sewa (`lockForUpdate`). Index PostgreSQL tidak bisa membatasi jumlah baris.
-- Penghuni kedua bisa ditambahkan kapan saja ke sewa yang sama selama masih ada tempat. Tanggal jatuh temponya mengikuti sewa kamar.
+- **Orang kedua** hanya bisa ditambahkan kalau masih ada tempat **dan** sewa itu `accepts_roommate = true` ("bersedia berbagi kamar").
+    - Default `false`: kamar dianggap penuh walaupun baru berisi 1 orang, karena orang kedua harus kenalan penghuni (misalnya teman sekantor atau sekampus).
+    - Yang bisa mengubahnya: penghuni kamar itu dan pemilik, hanya selama sewa `active`. Tidak ada persetujuan per orang.
+    - Izin ini berlaku untuk satu kali penambahan. Setelah orang kedua ditambahkan, atau salah satu penghuni keluar, nilainya kembali `false`.
+    - Tanggal jatuh tempo penghuni kedua mengikuti sewa kamar.
 - Sewa `active`/`inactive` selalu punya minimal satu penghuni aktif. Kalau penghuni aktif terakhir keluar, sewa ikut berakhir (lihat "Penghuni keluar").
 - Satu akun hanya boleh aktif di satu kamar. Penghuni tanpa akun (`user_id` kosong) tidak terkena aturan ini, karena unique index PostgreSQL menganggap setiap `NULL` berbeda:
 
@@ -233,7 +239,17 @@ CREATE UNIQUE INDEX tenancy_occupants_user_active_unique
 
 ### Pembayaran dan masa tenggang
 
-`paid_until` adalah **tanggal bayar berikutnya** (jatuh tempo), bukan hari terakhir yang sudah dibayar. Contoh: penghuni masuk 1 Januari dan membayar 1 bulan di muka, maka `paid_until` = 1 Februari. Pada 1 Februari (H-0) penghuni masih lancar, dan baru terlambat mulai 2 Februari (H+1). Saat sewa dibuat, pemilik mengisi `paid_until` = `start_date` + jumlah bulan yang dibayar di muka.
+`paid_until` adalah **tanggal bayar berikutnya** (jatuh tempo), bukan hari terakhir yang sudah dibayar. Contoh: penghuni masuk 1 Januari dan membayar 1 bulan di muka, maka `paid_until` = 1 Februari. Pada 1 Februari (H-0) penghuni masih lancar, dan baru terlambat mulai 2 Februari (H+1). Saat sewa dibuat, pemilik mengisi tanggal masuk dan jumlah bulan yang dibayar di muka, lalu sistem menghitung `paid_until`.
+
+**Tanggal patokan:** tanggal bayar selalu jatuh pada tanggal yang sama dengan tanggal masuk (`start_date`). Kalau bulan itu lebih pendek, dipakai hari terakhir bulan itu. Dihitung dengan `App\Support\DueDate::advance()`.
+
+| Tanggal masuk | Dibayar                       | `paid_until` |
+| ------------- | ----------------------------- | ------------ |
+| 31 Jan 2026   | 1 bulan                       | 28 Feb 2026  |
+| 31 Jan 2026   | 2 bulan                       | 31 Mar 2026  |
+| 31 Jan 2026   | 1 bulan lagi dari 28 Feb 2026 | 31 Mar 2026  |
+
+Baris terakhir yang membedakan aturan ini dari `addMonthsNoOverflow` berantai, yang akan "terbawa" menjadi 28 Mar, 28 Apr, dan seterusnya.
 
 Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku adalah `extended_until` kalau terisi, selain itu `paid_until`.
 
@@ -246,7 +262,7 @@ Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku ada
 | `extended_until` terlewat        | Perlu keputusan (tanpa tenggang baru) | Normal sampai pemilik memutuskan |
 
 - Bukti bisa diunggah oleh penghuni aktif mana pun di kamar itu, dan berlaku untuk sewa kamarnya.
-- Bukti **disetujui:** `paid_until` maju `months_granted` bulan (default 1) dengan `addMonthsNoOverflow`. `extended_until` dikosongkan. Kalau sewa `inactive`, statusnya kembali `active` dan `deactivated_at`/`vacate_by` dikosongkan. Nilai sebelum/sesudah disimpan di `payment_proofs`.
+- Bukti **disetujui:** `paid_until` maju `months_granted` bulan (default 1) dengan `DueDate::advance()` dan tanggal patokan dari `start_date`. `extended_until` dikosongkan. Kalau sewa `inactive`, statusnya kembali `active` dan `deactivated_at`/`vacate_by` dikosongkan. Nilai sebelum/sesudah disimpan di `payment_proofs`.
 - Bukti **ditolak:** `review_note` wajib diisi sebagai alasan.
 - Kalau masih ada bukti `pending`, pemilik diminta memverifikasinya sebelum bisa menonaktifkan.
 - Setiap keputusan pemilik dicatat di `tenancy_decisions`.

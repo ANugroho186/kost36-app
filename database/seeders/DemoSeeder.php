@@ -176,7 +176,8 @@ class DemoSeeder extends Seeder
             'vacate_by' => $this->today->addDays(5),
         ]);
 
-        $dodi = $this->tenant('penghuni4', 'Dodi Contoh');
+        // Masih memakai password sementara dari pemilik, jadi dashboard-nya menampilkan pengingat.
+        $dodi = $this->tenant('penghuni4', 'Dodi Contoh', hasTemporaryPassword: true);
         TenancyOccupant::factory()->for($tenancy)->for($dodi)->create([
             'nickname' => 'Dodi',
             'moved_in_at' => $start,
@@ -250,12 +251,13 @@ class DemoSeeder extends Seeder
         RentalInquiry::factory()->for($property)->done()->create();
     }
 
-    private function tenant(string $username, string $name, ?string $email = null): User
+    private function tenant(string $username, string $name, ?string $email = null, bool $hasTemporaryPassword = false): User
     {
         return User::factory()->create([
             'name' => $name,
             'username' => $username,
             'email' => $email,
+            'has_temporary_password' => $hasTemporaryPassword,
         ]);
     }
 }

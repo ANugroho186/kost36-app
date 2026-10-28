@@ -2,6 +2,7 @@
 
 use App\Models\Tenancy;
 use App\Models\TenancyOccupant;
+use App\Models\User;
 
 test('who may view a tenancy', function (string $actor, bool $allowed) {
     $scenario = accessScenario();
@@ -41,4 +42,35 @@ test('occupants lose access once the tenancy has ended', function () {
     $occupant = TenancyOccupant::factory()->for($tenancy)->create()->user;
 
     expect($occupant->can('view', $tenancy))->toBeFalse();
+});
+
+test('who may change whether the room accepts a roommate', function (string $actor, bool $allowed) {
+    $scenario = accessScenario();
+
+    expect($scenario[$actor]->can('toggleRoommate', $scenario['tenancy']))->toBe($allowed);
+})->with([
+    'pemilik kost' => ['owner', true],
+    'penghuni sewa itu' => ['occupant', true],
+    'teman sekamar' => ['roommate', true],
+    'penghuni yang sudah keluar' => ['formerOccupant', false],
+    'tetangga kamar lain' => ['otherTenant', false],
+]);
+
+test('only the owner adds occupants', function (string $actor, bool $allowed) {
+    $scenario = accessScenario();
+
+    expect($scenario[$actor]->can('addOccupant', $scenario['tenancy']))->toBe($allowed);
+})->with([
+    'pemilik kost' => ['owner', true],
+    'penghuni sewa itu' => ['occupant', false],
+]);
+
+test('sharing and new occupants are only for active tenancies', function () {
+    $owner = User::factory()->owner()->create();
+    $tenancy = Tenancy::factory()->inactive()->create();
+    $occupant = TenancyOccupant::factory()->for($tenancy)->create()->user;
+
+    expect($owner->can('toggleRoommate', $tenancy))->toBeFalse()
+        ->and($occupant->can('toggleRoommate', $tenancy))->toBeFalse()
+        ->and($owner->can('addOccupant', $tenancy))->toBeFalse();
 });
