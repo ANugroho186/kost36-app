@@ -3,6 +3,8 @@ import RoomController from '@/actions/App/Http/Controllers/Owner/RoomController'
 import Heading from '@/components/heading';
 import type { RoomFormValues } from '@/components/room-fields';
 import { RoomFields } from '@/components/room-fields';
+import type { RoomPhoto } from '@/components/room-photos';
+import { RoomPhotos } from '@/components/room-photos';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,6 +23,8 @@ type Props = {
     occupants: number;
     // false kalau kamar punya sewa, keluhan, perawatan, atau inventaris.
     canDelete: boolean;
+    photos: RoomPhoto[];
+    maxPhotos: number;
 };
 
 function DeleteRoomDialog({
@@ -62,7 +66,13 @@ function DeleteRoomDialog({
     );
 }
 
-export default function EditRoom({ room, occupants, canDelete }: Props) {
+export default function EditRoom({
+    room,
+    occupants,
+    canDelete,
+    photos,
+    maxPhotos,
+}: Props) {
     return (
         <>
             <Head title={`Room ${room.number}`} />
@@ -89,6 +99,12 @@ export default function EditRoom({ room, occupants, canDelete }: Props) {
                         </>
                     )}
                 </Form>
+
+                <RoomPhotos
+                    roomId={room.id}
+                    photos={photos}
+                    maxPhotos={maxPhotos}
+                />
 
                 <section className="mt-10 space-y-4 border-t pt-6">
                     <Heading

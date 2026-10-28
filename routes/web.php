@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\RoomController;
+use App\Http\Controllers\Owner\RoomPhotoController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\RentalInquiryController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('property', [PropertyController::class, 'edit'])->name('property.edit');
         Route::put('property', [PropertyController::class, 'update'])->name('property.update');
         Route::resource('rooms', RoomController::class)->except('show');
+
+        // scopeBindings: {photo} harus milik {room}, kalau tidak hasilnya 404.
+        Route::scopeBindings()->group(function () {
+            Route::post('rooms/{room}/photos', [RoomPhotoController::class, 'store'])->name('rooms.photos.store');
+            Route::put('rooms/{room}/photos/{photo}/cover', [RoomPhotoController::class, 'cover'])->name('rooms.photos.cover');
+            Route::delete('rooms/{room}/photos/{photo}', [RoomPhotoController::class, 'destroy'])->name('rooms.photos.destroy');
+        });
     });
 });
 

@@ -1,27 +1,39 @@
 <?php
 
 use App\Models\Room;
+use App\Models\RoomPhoto;
 use App\Models\TenancyOccupant;
 use App\Models\User;
 
-test('tenants cannot open or change owner pages', function (string $method, string $routeName, bool $needsRoom) {
+// Setiap route pemilik baru wajib ditambahkan ke dataset ini.
+test('tenants cannot open or change owner pages', function (string $method, string $routeName, string $params) {
     $room = Room::factory()->create();
+    $photo = RoomPhoto::factory()->for($room)->create();
     // Penghuni sungguhan yang tinggal di kamar itu, bukan sekadar akun tanpa kamar.
     $tenant = TenancyOccupant::factory()->create()->user;
-    $url = $needsRoom ? route($routeName, $room) : route($routeName);
+
+    $url = match ($params) {
+        'none' => route($routeName),
+        'room' => route($routeName, $room),
+        'photo' => route($routeName, [$room, $photo]),
+    };
 
     $this->actingAs($tenant)->{$method}($url)->assertForbidden();
 
-    expect(Room::find($room->id))->not->toBeNull();
+    expect(Room::find($room->id))->not->toBeNull()
+        ->and(RoomPhoto::find($photo->id))->not->toBeNull();
 })->with([
-    'buka profil kost' => ['get', 'owner.property.edit', false],
-    'simpan profil kost' => ['put', 'owner.property.update', false],
-    'daftar kamar' => ['get', 'owner.rooms.index', false],
-    'form tambah kamar' => ['get', 'owner.rooms.create', false],
-    'simpan kamar baru' => ['post', 'owner.rooms.store', false],
-    'form ubah kamar' => ['get', 'owner.rooms.edit', true],
-    'ubah kamar' => ['put', 'owner.rooms.update', true],
-    'hapus kamar' => ['delete', 'owner.rooms.destroy', true],
+    'buka profil kost' => ['get', 'owner.property.edit', 'none'],
+    'simpan profil kost' => ['put', 'owner.property.update', 'none'],
+    'daftar kamar' => ['get', 'owner.rooms.index', 'none'],
+    'form tambah kamar' => ['get', 'owner.rooms.create', 'none'],
+    'simpan kamar baru' => ['post', 'owner.rooms.store', 'none'],
+    'form ubah kamar' => ['get', 'owner.rooms.edit', 'room'],
+    'ubah kamar' => ['put', 'owner.rooms.update', 'room'],
+    'hapus kamar' => ['delete', 'owner.rooms.destroy', 'room'],
+    'unggah foto kamar' => ['post', 'owner.rooms.photos.store', 'room'],
+    'jadikan foto sampul' => ['put', 'owner.rooms.photos.cover', 'photo'],
+    'hapus foto kamar' => ['delete', 'owner.rooms.photos.destroy', 'photo'],
 ]);
 
 test('guests are sent to the login page', function () {

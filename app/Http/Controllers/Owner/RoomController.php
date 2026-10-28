@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Owner\RoomRequest;
+use App\Http\Requests\Owner\StoreRoomPhotoRequest;
 use App\Models\Property;
 use App\Models\Room;
+use App\Models\RoomPhoto;
 use App\Models\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -79,6 +81,14 @@ class RoomController extends Controller
             ],
             'occupants' => $room->activeOccupantCount(),
             'canDelete' => ! $room->hasRelatedRecords(),
+            // Sudah terurut menurut sort_order (lihat Room::photos()).
+            'photos' => $room->photos
+                ->map(fn (RoomPhoto $photo): array => [
+                    'id' => $photo->id,
+                    'url' => Storage::disk('public')->url($photo->path),
+                ])
+                ->all(),
+            'maxPhotos' => StoreRoomPhotoRequest::MAX_PHOTOS_PER_ROOM,
         ]);
     }
 
