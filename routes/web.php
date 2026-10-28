@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\ComplaintPhotoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Owner\OccupantAccountController;
 use App\Http\Controllers\Owner\PropertyController;
@@ -25,6 +27,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dipakai penghuni dan pemilik. Siapa yang boleh dicek oleh TenancyPolicy::toggleRoommate.
     Route::put('tenancies/{tenancy}/accepts-roommate', RoommateConsentController::class)
         ->name('tenancies.accepts-roommate');
+
+    // Keluhan penghuni tentang kamarnya sendiri (kamar diambil dari sewa yang sedang ditempati).
+    Route::resource('complaints', ComplaintController::class)->only(['index', 'create', 'store']);
+
+    // Foto keluhan di disk privat, untuk penghuni dan pemilik. Hak akses: ComplaintPolicy::view.
+    Route::get('complaints/{complaint}/photos/{photo}', ComplaintPhotoController::class)
+        ->scopeBindings()
+        ->name('complaints.photos.show');
 
     // Halaman pemilik. Hak akses dicek per aksi lewat Policy, bukan hanya lewat awalan URL.
     Route::prefix('owner')->name('owner.')->group(function () {

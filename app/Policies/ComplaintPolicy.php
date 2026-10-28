@@ -28,9 +28,7 @@ class ComplaintPolicy
 
         $tenancy = $user->currentTenancy();
 
-        return $tenancy !== null
-            && $tenancy->room_id === $complaint->room_id
-            && $complaint->created_at?->greaterThanOrEqualTo($tenancy->start_date) === true;
+        return $tenancy !== null && $complaint->wasReportedDuring($tenancy);
     }
 
     /**

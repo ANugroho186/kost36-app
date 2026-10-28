@@ -1,5 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BedDouble, Building2, KeyRound, LayoutGrid } from 'lucide-react';
+import {
+    BedDouble,
+    Building2,
+    KeyRound,
+    LayoutGrid,
+    Wrench,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,6 +19,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as complaints } from '@/routes/complaints';
 import { edit as editProperty } from '@/routes/owner/property';
 import { index as rooms } from '@/routes/owner/rooms';
 import { index as tenancies } from '@/routes/owner/tenancies';
@@ -43,12 +50,20 @@ const ownerNavItems: NavItem[] = [
     },
 ];
 
+const tenantNavItems: NavItem[] = [
+    {
+        title: 'Complaints',
+        href: complaints(),
+        icon: Wrench,
+    },
+];
+
 export function AppSidebar() {
     const { auth } = usePage().props;
     const mainNavItems =
         auth.user.role === 'owner'
             ? [dashboardItem, ...ownerNavItems]
-            : [dashboardItem];
+            : [dashboardItem, ...tenantNavItems];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

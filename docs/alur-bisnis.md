@@ -105,6 +105,11 @@ flowchart TD
     J --> K([Penghuni melihat status selesai])
 ```
 
+- Penghuni melapor dari menu "Complaints". Kamar diambil dari sewa yang sedang ia tempati, bukan dipilih di form, jadi ia tidak bisa melapor atas nama kamar lain.
+- Pelapor dan status diisi sistem. Nilai `room_id`, `reporter_id`, atau `status` yang dikirim dari form diabaikan.
+- Foto opsional, disimpan di disk privat (lihat "File" di `docs/database.md`). Kalau penyimpanan gagal di tengah jalan, foto yang sudah tersimpan ikut dihapus, supaya tidak ada foto kamar yang tertinggal tanpa catatan.
+- Notifikasi dikirim mulai Fase 3. Sampai saat itu, keluhan baru terlihat dari angka "keluhan terbuka" di dashboard pemilik.
+
 ## Alur pengingat harian (scheduler, 08.00 WIB)
 
 ```mermaid

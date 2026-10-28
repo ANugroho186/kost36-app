@@ -7,18 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { firstErrorFor } from '@/lib/form-errors';
 
 export type RoomPhoto = {
     id: number;
     url: string;
 };
-
-// Error unggahan bisa ada di "photos" (jumlah) atau "photos.0", "photos.1", dst. (per file).
-function firstPhotoError(errors: Record<string, string>): string | undefined {
-    return Object.entries(errors).find(([key]) =>
-        key.startsWith('photos'),
-    )?.[1];
-}
 
 export function RoomPhotos({
     roomId,
@@ -110,7 +104,9 @@ export function RoomPhotos({
                                     required
                                     accept="image/jpeg,image/png,image/webp"
                                 />
-                                <InputError message={firstPhotoError(errors)} />
+                                <InputError
+                                    message={firstErrorFor(errors, 'photos')}
+                                />
                             </div>
                             <Button disabled={processing}>
                                 {processing && <Spinner />}

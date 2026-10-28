@@ -23,6 +23,38 @@ class ImageUpload
     private const QUALITY = 82;
 
     /**
+     * Aturan validasi untuk satu file foto, dipakai semua form unggah foto.
+     *
+     * `mimes` memeriksa isi file, bukan hanya akhiran nama file. `dimensions` mencegah gambar
+     * raksasa berukuran file kecil yang bisa menghabiskan memori server saat diolah.
+     *
+     * @return list<string>
+     */
+    public static function rules(): array
+    {
+        return ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=6000,max_height=6000'];
+    }
+
+    /**
+     * Pesan error untuk rules(), misalnya messages('photos.*').
+     *
+     * Foto mode 50 MP (misalnya 8000 × 6000, sekitar 10 MB) sengaja ditolak karena boros memori
+     * server. Pesannya memberi tahu apa yang harus dilakukan, bukan hanya batas angkanya.
+     *
+     * @return array<string, string>
+     */
+    public static function messages(string $attribute): array
+    {
+        $tooLarge = 'This photo is too large. Take it in your camera\'s normal mode instead of a high-resolution (50 MP) mode, or resize it first.';
+
+        return [
+            $attribute.'.max' => $tooLarge.' The limit is 5 MB per photo.',
+            $attribute.'.dimensions' => $tooLarge.' The limit is 6000 pixels on each side.',
+            $attribute.'.mimes' => 'Only JPG, PNG or WebP photos are allowed.',
+        ];
+    }
+
+    /**
      * @return string Path relatif di disk, misalnya "rooms/abc....webp".
      */
     public function store(UploadedFile $file, string $directory, string $disk = 'public'): string
