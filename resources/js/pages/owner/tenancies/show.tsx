@@ -2,6 +2,11 @@ import { Form, Head } from '@inertiajs/react';
 import TenancyOccupantController from '@/actions/App/Http/Controllers/Owner/TenancyOccupantController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import {
+    CreateAccountDialog,
+    ResetPasswordDialog,
+    TemporaryPasswordNotice,
+} from '@/components/occupant-account-actions';
 import { RoommateConsentForm } from '@/components/roommate-consent-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,8 +31,10 @@ type Props = {
             nickname: string | null;
             movedInAt: string;
             hasAccount: boolean;
+            username: string | null;
         }[];
     };
+    canManageAccounts: boolean;
     canAddOccupant: boolean;
     canToggleRoommate: boolean;
     today: string;
@@ -35,6 +42,7 @@ type Props = {
 
 export default function ShowTenancy({
     tenancy,
+    canManageAccounts,
     canAddOccupant,
     canToggleRoommate,
     today,
@@ -46,6 +54,8 @@ export default function ShowTenancy({
             <Head title={`Room ${tenancy.roomNumber}`} />
 
             <div className="max-w-2xl space-y-10 p-4">
+                <TemporaryPasswordNotice />
+
                 <section className="space-y-3">
                     <div className="flex flex-wrap items-center gap-3">
                         <Heading title={`Room ${tenancy.roomNumber}`} />
@@ -103,9 +113,23 @@ export default function ShowTenancy({
                                 </span>
                                 <Badge variant="outline">
                                     {occupant.hasAccount
-                                        ? 'Has login'
+                                        ? `Login: ${occupant.username}`
                                         : 'No account'}
                                 </Badge>
+                                {canManageAccounts &&
+                                    (occupant.hasAccount ? (
+                                        <ResetPasswordDialog
+                                            tenancyId={tenancy.id}
+                                            occupantId={occupant.id}
+                                            username={occupant.username}
+                                        />
+                                    ) : (
+                                        <CreateAccountDialog
+                                            tenancyId={tenancy.id}
+                                            occupantId={occupant.id}
+                                            nickname={occupant.nickname}
+                                        />
+                                    ))}
                             </li>
                         ))}
                     </ul>

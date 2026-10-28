@@ -135,7 +135,8 @@ test('the tenancy page lists occupants without their contact details', function 
                 ->has('id')
                 ->where('nickname', 'Budi')
                 ->has('movedInAt')
-                ->where('hasAccount', true),
+                ->where('hasAccount', true)
+                ->has('username'),
             )
             ->where('canAddOccupant', false)
             ->where('canToggleRoommate', true),

@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // true selama penghuni masih memakai password sementara dari pemilik.
+            $table->boolean('has_temporary_password')->default(false);
             $table->string('role')->default('tenant');
             $table->rememberToken();
             $table->timestamps();

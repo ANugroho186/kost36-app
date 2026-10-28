@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
-import { CalendarClock, TriangleAlert, Users } from 'lucide-react';
+import { CalendarClock, KeyRound, TriangleAlert, Users } from 'lucide-react';
 import { RoommateConsentForm } from '@/components/roommate-consent-form';
+import TextLink from '@/components/text-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Card,
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { formatDate } from '@/lib/dates';
 import { dashboard } from '@/routes';
+import { edit as editSecurity } from '@/routes/security';
 
 // Sama persis dengan yang dikirim DashboardController::tenant().
 type TenantTenancy = {
@@ -26,14 +28,38 @@ type TenantTenancy = {
 
 type Props = {
     tenancy: TenantTenancy | null;
+    hasTemporaryPassword: boolean;
 };
 
-export default function TenantDashboard({ tenancy }: Props) {
+export default function TenantDashboard({
+    tenancy,
+    hasTemporaryPassword,
+}: Props) {
     return (
         <>
             <Head title="Dashboard" />
 
             <div className="max-w-2xl space-y-4 p-4">
+                {/* Pengingat saja, tidak wajib: hilang setelah password diganti sendiri. */}
+                {hasTemporaryPassword && (
+                    <Alert>
+                        <KeyRound />
+                        <AlertTitle>
+                            You are using a temporary password
+                        </AlertTitle>
+                        <AlertDescription>
+                            <p>
+                                It was created by the property owner. We
+                                recommend choosing your own password in{' '}
+                                <TextLink href={editSecurity()}>
+                                    Settings → Security
+                                </TextLink>
+                                .
+                            </p>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 {tenancy === null ? (
                     <Card>
                         <CardHeader>

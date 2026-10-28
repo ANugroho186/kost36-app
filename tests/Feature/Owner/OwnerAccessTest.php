@@ -19,6 +19,7 @@ test('tenants cannot open or change owner pages', function (string $method, stri
         'room' => route($routeName, $room),
         'photo' => route($routeName, [$room, $photo]),
         'tenancy' => route($routeName, $occupancy->tenancy),
+        'occupant' => route($routeName, [$occupancy->tenancy, $occupancy]),
     };
 
     $this->actingAs($tenant)->{$method}($url)->assertForbidden();
@@ -42,6 +43,8 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     'simpan sewa baru' => ['post', 'owner.tenancies.store', 'none'],
     'detail sewa sendiri versi pemilik' => ['get', 'owner.tenancies.show', 'tenancy'],
     'tambah penghuni ke kamar sendiri' => ['post', 'owner.tenancies.occupants.store', 'tenancy'],
+    'buat akun untuk diri sendiri' => ['post', 'owner.tenancies.occupants.account.store', 'occupant'],
+    'reset password sendiri lewat jalur pemilik' => ['put', 'owner.tenancies.occupants.password.reset', 'occupant'],
 ]);
 
 test('guests are sent to the login page', function () {

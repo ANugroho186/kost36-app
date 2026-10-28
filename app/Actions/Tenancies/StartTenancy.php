@@ -4,6 +4,7 @@ namespace App\Actions\Tenancies;
 
 use App\Models\Room;
 use App\Models\Tenancy;
+use App\Support\DueDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -25,11 +26,11 @@ class StartTenancy
                     throw $this->roomOccupied();
                 }
 
-                // paid_until adalah tanggal bayar berikutnya: masuk 1 Jan + 1 bulan = 1 Feb.
-                // NoOverflow: masuk 31 Jan + 1 bulan = 28 Feb, bukan 3 Maret.
+                // paid_until adalah tanggal bayar berikutnya, dengan tanggal masuk sebagai patokan:
+                // masuk 1 Jan + 1 bulan = 1 Feb, masuk 31 Jan + 2 bulan = 31 Mar.
                 $tenancy = $room->tenancies()->create([
                     'start_date' => $startDate,
-                    'paid_until' => $startDate->addMonthsNoOverflow($monthsPaid),
+                    'paid_until' => DueDate::advance($startDate, $monthsPaid, $startDate->day),
                 ]);
 
                 $tenancy->occupants()->create([

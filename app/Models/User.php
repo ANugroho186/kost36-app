@@ -24,6 +24,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $email
  * @property CarbonImmutable|null $email_verified_at
  * @property string $password
+ * @property bool $has_temporary_password Masih memakai password sementara dari pemilik.
  * @property UserRole $role
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -32,7 +33,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-// `role` sengaja tidak fillable agar tidak bisa diubah lewat input form (mass assignment).
+// `role` dan `has_temporary_password` sengaja tidak fillable agar tidak bisa diubah lewat input form.
 #[Fillable(['name', 'username', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
@@ -50,6 +51,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'has_temporary_password' => 'boolean',
             'role' => UserRole::class,
             'two_factor_confirmed_at' => 'datetime',
         ];

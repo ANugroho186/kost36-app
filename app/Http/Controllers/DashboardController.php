@@ -57,7 +57,10 @@ class DashboardController extends Controller
         $tenancy = $user->currentTenancy();
 
         if ($tenancy === null) {
-            return Inertia::render('tenant/dashboard', ['tenancy' => null]);
+            return Inertia::render('tenant/dashboard', [
+                'tenancy' => null,
+                'hasTemporaryPassword' => $user->has_temporary_password,
+            ]);
         }
 
         Gate::authorize('view', $tenancy);
@@ -65,6 +68,8 @@ class DashboardController extends Controller
         $hasSpace = $tenancy->activeOccupants()->count() < $tenancy->room->capacity;
 
         return Inertia::render('tenant/dashboard', [
+            // Pengingat (tidak wajib) untuk mengganti password sementara dari pemilik.
+            'hasTemporaryPassword' => $user->has_temporary_password,
             'tenancy' => [
                 'id' => $tenancy->id,
                 'roomNumber' => $tenancy->room->number,

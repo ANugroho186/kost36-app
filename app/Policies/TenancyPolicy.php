@@ -60,4 +60,13 @@ class TenancyPolicy
     {
         return $user->isOwner() && $tenancy->status === TenancyStatus::Active;
     }
+
+    /**
+     * Membuatkan akun login untuk penghuni di sewa ini. Akun penghuni dibuat oleh pemilik,
+     * tidak ada registrasi publik.
+     */
+    public function manageAccounts(User $user, Tenancy $tenancy): bool
+    {
+        return $user->isOwner();
+    }
 }

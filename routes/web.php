@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Owner\OccupantAccountController;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\RoomController;
 use App\Http\Controllers\Owner\RoomPhotoController;
@@ -41,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('tenancies', TenancyController::class)->only(['index', 'create', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])
             ->name('tenancies.occupants.store');
+
+        // scopeBindings: {occupant} harus penghuni dari {tenancy}, kalau tidak hasilnya 404.
+        Route::scopeBindings()->group(function () {
+            Route::post('tenancies/{tenancy}/occupants/{occupant}/account', [OccupantAccountController::class, 'store'])
+                ->name('tenancies.occupants.account.store');
+            Route::put('tenancies/{tenancy}/occupants/{occupant}/password', [OccupantAccountController::class, 'resetPassword'])
+                ->name('tenancies.occupants.password.reset');
+        });
     });
 });
 

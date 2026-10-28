@@ -87,7 +87,7 @@ class TenancyController extends Controller
     {
         Gate::authorize('update', $tenancy);
 
-        $tenancy->load(['room', 'activeOccupants']);
+        $tenancy->load(['room', 'activeOccupants.user']);
         $occupants = $tenancy->activeOccupants->count();
         $hasSpace = $occupants < $tenancy->room->capacity;
 
@@ -107,9 +107,12 @@ class TenancyController extends Controller
                         'nickname' => $occupant->nickname,
                         'movedInAt' => $occupant->moved_in_at->toDateString(),
                         'hasAccount' => $occupant->user_id !== null,
+                        // Hanya username: email dan kontak notifikasi tidak dibutuhkan di sini.
+                        'username' => $occupant->user?->username,
                     ])
                     ->all(),
             ],
+            'canManageAccounts' => Gate::allows('manageAccounts', $tenancy),
             'canAddOccupant' => Gate::allows('addOccupant', $tenancy)
                 && $hasSpace
                 && ($occupants === 0 || $tenancy->accepts_roommate),
