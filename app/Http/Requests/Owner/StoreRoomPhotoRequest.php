@@ -43,8 +43,15 @@ class StoreRoomPhotoRequest extends FormRequest
      */
     public function messages(): array
     {
+        // Foto mode 50 MP (misalnya 8000 × 6000, sekitar 10 MB) sengaja ditolak karena boros memori
+        // server. Pesannya memberi tahu apa yang harus dilakukan, bukan hanya batas angkanya.
+        $tooLarge = 'This photo is too large. Take it in your camera\'s normal mode instead of a high-resolution (50 MP) mode, or resize it first.';
+
         return [
             'photos.max' => 'A room can have at most '.self::MAX_PHOTOS_PER_ROOM.' photos.',
+            'photos.*.max' => $tooLarge.' The limit is 5 MB per photo.',
+            'photos.*.dimensions' => $tooLarge.' The limit is 6000 pixels on each side.',
+            'photos.*.mimes' => 'Only JPG, PNG or WebP photos are allowed.',
         ];
     }
 }

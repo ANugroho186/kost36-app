@@ -89,6 +89,19 @@ test('only images within the size limits are accepted', function (UploadedFile $
     'lebih dari 6000 piksel' => fn () => UploadedFile::fake()->image('raksasa.png', 6001, 10),
 ]);
 
+test('oversized photos explain how to fix them', function (UploadedFile $file) {
+    $room = Room::factory()->create();
+
+    // assertInvalid memeriksa bahwa pesan error untuk photos.0 mengandung teks ini.
+    $this->actingAs(User::factory()->owner()->create())
+        ->from(route('owner.rooms.edit', $room))
+        ->post(route('owner.rooms.photos.store', $room), ['photos' => [$file]])
+        ->assertInvalid(['photos.0' => 'normal mode']);
+})->with([
+    'ukuran file' => fn () => UploadedFile::fake()->image('50mp.jpg')->size(10000),
+    'ukuran piksel' => fn () => UploadedFile::fake()->image('50mp.png', 6001, 10),
+]);
+
 test('a room can have at most eight photos', function () {
     $room = Room::factory()->create();
     RoomPhoto::factory()->for($room)->count(8)->create();
