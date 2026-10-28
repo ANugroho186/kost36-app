@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { CalendarClock, TriangleAlert, Users } from 'lucide-react';
+import { RoommateConsentForm } from '@/components/roommate-consent-form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Card,
@@ -8,30 +9,24 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatDate } from '@/lib/dates';
 import { dashboard } from '@/routes';
 
 // Sama persis dengan yang dikirim DashboardController::tenant().
 type TenantTenancy = {
+    id: number;
     roomNumber: string;
     status: 'active' | 'inactive';
     paidUntil: string;
     vacateBy: string | null;
     roommates: string[];
+    acceptsRoommate: boolean;
+    canToggleRoommate: boolean;
 };
 
 type Props = {
     tenancy: TenantTenancy | null;
 };
-
-// Tanggal dari server berformat YYYY-MM-DD. Ditambah jam 00:00 supaya dibaca sebagai
-// waktu lokal dan tanggalnya tidak bergeser karena zona waktu.
-function formatDate(date: string): string {
-    return new Date(`${date}T00:00:00`).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    });
-}
 
 export default function TenantDashboard({ tenancy }: Props) {
     return (
@@ -95,6 +90,25 @@ export default function TenantDashboard({ tenancy }: Props) {
                                 </p>
                             </CardContent>
                         </Card>
+
+                        {tenancy.canToggleRoommate && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Share your room</CardTitle>
+                                    <CardDescription>
+                                        {tenancy.acceptsRoommate
+                                            ? 'Your room is open for one more person you know. The owner can now add them.'
+                                            : 'If a friend from work or campus wants to share this room with you, open it so the owner can add them. Your room is never offered to strangers.'}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <RoommateConsentForm
+                                        tenancyId={tenancy.id}
+                                        accepts={tenancy.acceptsRoommate}
+                                    />
+                                </CardContent>
+                            </Card>
+                        )}
                     </>
                 )}
             </div>

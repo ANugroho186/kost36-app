@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\TenancyStatus;
 use App\Models\Tenancy;
 use App\Models\User;
 
@@ -39,5 +40,24 @@ class TenancyPolicy
     public function delete(User $user, Tenancy $tenancy): bool
     {
         return $user->isOwner();
+    }
+
+    /**
+     * Menyalakan atau mematikan "bersedia berbagi kamar". Hanya selama sewa aktif: kamar yang
+     * sedang menunggu pengosongan tidak ditawarkan untuk orang kedua.
+     */
+    public function toggleRoommate(User $user, Tenancy $tenancy): bool
+    {
+        return $tenancy->status === TenancyStatus::Active
+            && ($user->isOwner() || $user->occupies($tenancy));
+    }
+
+    /**
+     * Menambah penghuni ke sewa yang sedang aktif. Syarat kapasitas dan izin berbagi dicek di
+     * AddOccupant, supaya pemilik mendapat pesan validasi yang jelas, bukan halaman 403.
+     */
+    public function addOccupant(User $user, Tenancy $tenancy): bool
+    {
+        return $user->isOwner() && $tenancy->status === TenancyStatus::Active;
     }
 }

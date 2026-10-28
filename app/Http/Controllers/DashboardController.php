@@ -62,8 +62,11 @@ class DashboardController extends Controller
 
         Gate::authorize('view', $tenancy);
 
+        $hasSpace = $tenancy->activeOccupants()->count() < $tenancy->room->capacity;
+
         return Inertia::render('tenant/dashboard', [
             'tenancy' => [
+                'id' => $tenancy->id,
                 'roomNumber' => $tenancy->room->number,
                 'status' => $tenancy->status->value,
                 'paidUntil' => $tenancy->paid_until->toDateString(),
@@ -74,6 +77,9 @@ class DashboardController extends Controller
                     ->filter()
                     ->values()
                     ->all(),
+                'acceptsRoommate' => $tenancy->accepts_roommate,
+                // Tombol "bersedia berbagi kamar" hanya muncul kalau masih ada tempat dan sewa aktif.
+                'canToggleRoommate' => $hasSpace && Gate::allows('toggleRoommate', $tenancy),
             ],
         ]);
     }

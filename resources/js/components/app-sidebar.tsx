@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BedDouble, Building2, LayoutGrid } from 'lucide-react';
+import { BedDouble, Building2, KeyRound, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -15,6 +15,7 @@ import {
 import { dashboard } from '@/routes';
 import { edit as editProperty } from '@/routes/owner/property';
 import { index as rooms } from '@/routes/owner/rooms';
+import { index as tenancies } from '@/routes/owner/tenancies';
 import type { NavItem } from '@/types';
 
 const dashboardItem: NavItem = {
@@ -34,6 +35,11 @@ const ownerNavItems: NavItem[] = [
         title: 'Rooms',
         href: rooms(),
         icon: BedDouble,
+    },
+    {
+        title: 'Tenancies',
+        href: tenancies(),
+        icon: KeyRound,
     },
 ];
 

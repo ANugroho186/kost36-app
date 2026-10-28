@@ -19,13 +19,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable $paid_until Tanggal bayar berikutnya (jatuh tempo).
  * @property CarbonImmutable|null $extended_until
  * @property TenancyStatus $status
+ * @property bool $accepts_roommate "Bersedia berbagi kamar", berlaku untuk satu kali penambahan.
  * @property CarbonImmutable|null $deactivated_at
  * @property CarbonImmutable|null $vacate_by
  * @property CarbonImmutable|null $end_date
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-// Status dan tanggal penonaktifan diubah lewat alur bisnis, bukan dari input form.
+// Status, izin berbagi kamar, dan tanggal penonaktifan diubah lewat alur bisnis, bukan dari input form.
 #[Fillable(['start_date', 'paid_until'])]
 class Tenancy extends Model
 {
@@ -33,12 +34,14 @@ class Tenancy extends Model
     use HasFactory;
 
     /**
-     * Sewa baru selalu aktif. Kolom status tidak punya default di database.
+     * Sewa baru selalu aktif (kolom status tidak punya default di database) dan dianggap penuh
+     * sampai penghuni atau pemilik menyalakan izin berbagi kamar.
      *
      * @var array<string, mixed>
      */
     protected $attributes = [
         'status' => TenancyStatus::Active->value,
+        'accepts_roommate' => false,
     ];
 
     /**
@@ -53,6 +56,7 @@ class Tenancy extends Model
             'paid_until' => 'date',
             'extended_until' => 'date',
             'status' => TenancyStatus::class,
+            'accepts_roommate' => 'boolean',
             'deactivated_at' => 'datetime',
             'vacate_by' => 'date',
             'end_date' => 'date',

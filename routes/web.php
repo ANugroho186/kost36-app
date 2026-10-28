@@ -4,8 +4,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\RoomController;
 use App\Http\Controllers\Owner\RoomPhotoController;
+use App\Http\Controllers\Owner\TenancyController;
+use App\Http\Controllers\Owner\TenancyOccupantController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\RentalInquiryController;
+use App\Http\Controllers\RoommateConsentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', PublicPropertyController::class)->name('home');
@@ -17,6 +20,10 @@ Route::post('inquiries', [RentalInquiryController::class, 'store'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    // Dipakai penghuni dan pemilik. Siapa yang boleh dicek oleh TenancyPolicy::toggleRoommate.
+    Route::put('tenancies/{tenancy}/accepts-roommate', RoommateConsentController::class)
+        ->name('tenancies.accepts-roommate');
 
     // Halaman pemilik. Hak akses dicek per aksi lewat Policy, bukan hanya lewat awalan URL.
     Route::prefix('owner')->name('owner.')->group(function () {
@@ -30,6 +37,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('rooms/{room}/photos/{photo}/cover', [RoomPhotoController::class, 'cover'])->name('rooms.photos.cover');
             Route::delete('rooms/{room}/photos/{photo}', [RoomPhotoController::class, 'destroy'])->name('rooms.photos.destroy');
         });
+
+        Route::resource('tenancies', TenancyController::class)->only(['index', 'create', 'store', 'show']);
+        Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])
+            ->name('tenancies.occupants.store');
     });
 });
 

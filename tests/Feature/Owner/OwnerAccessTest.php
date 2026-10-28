@@ -9,13 +9,16 @@ use App\Models\User;
 test('tenants cannot open or change owner pages', function (string $method, string $routeName, string $params) {
     $room = Room::factory()->create();
     $photo = RoomPhoto::factory()->for($room)->create();
-    // Penghuni sungguhan yang tinggal di kamar itu, bukan sekadar akun tanpa kamar.
-    $tenant = TenancyOccupant::factory()->create()->user;
+    // Penghuni sungguhan, bukan sekadar akun tanpa kamar. Untuk route {tenancy}, yang dicoba
+    // adalah sewanya sendiri: halaman pemilik tetap tertutup walaupun itu kamarnya.
+    $occupancy = TenancyOccupant::factory()->create();
+    $tenant = $occupancy->user;
 
     $url = match ($params) {
         'none' => route($routeName),
         'room' => route($routeName, $room),
         'photo' => route($routeName, [$room, $photo]),
+        'tenancy' => route($routeName, $occupancy->tenancy),
     };
 
     $this->actingAs($tenant)->{$method}($url)->assertForbidden();
@@ -34,6 +37,11 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     'unggah foto kamar' => ['post', 'owner.rooms.photos.store', 'room'],
     'jadikan foto sampul' => ['put', 'owner.rooms.photos.cover', 'photo'],
     'hapus foto kamar' => ['delete', 'owner.rooms.photos.destroy', 'photo'],
+    'daftar sewa' => ['get', 'owner.tenancies.index', 'none'],
+    'form sewa baru' => ['get', 'owner.tenancies.create', 'none'],
+    'simpan sewa baru' => ['post', 'owner.tenancies.store', 'none'],
+    'detail sewa sendiri versi pemilik' => ['get', 'owner.tenancies.show', 'tenancy'],
+    'tambah penghuni ke kamar sendiri' => ['post', 'owner.tenancies.occupants.store', 'tenancy'],
 ]);
 
 test('guests are sent to the login page', function () {

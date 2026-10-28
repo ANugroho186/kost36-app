@@ -35,11 +35,14 @@ test('a tenant sees their own room and roommate', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/dashboard')
             ->has('tenancy', fn (Assert $tenancy) => $tenancy
+                ->has('id')
                 ->where('roomNumber', '1')
                 ->where('status', 'active')
                 ->has('paidUntil')
                 ->where('vacateBy', null)
-                ->where('roommates', ['Andi']),
+                ->where('roommates', ['Andi'])
+                ->where('acceptsRoommate', false)
+                ->where('canToggleRoommate', false),
             ),
         );
 });
