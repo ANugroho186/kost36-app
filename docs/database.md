@@ -69,6 +69,7 @@ erDiagram
         date paid_until "tanggal bayar berikutnya"
         date extended_until "nullable"
         string status "active, inactive, ended"
+        boolean accepts_roommate "bersedia berbagi kamar, default false"
         timestamp deactivated_at "nullable"
         date vacate_by "nullable"
         date end_date "nullable"
@@ -199,7 +200,7 @@ Hanya ini:
 
 - **Terisi:** kamar punya sewa berstatus `active` atau `inactive`. Penghuni nonaktif masih menempati kamar sampai `vacate_by`.
 - **Tersedia:** tidak ada sewa seperti itu.
-- Jumlah penghuni tidak memengaruhi status. Kamar berisi 1 orang tetap **terisi**, karena penghuni kedua hanya masuk bersama atau atas ajakan penghuni pertama.
+- Jumlah penghuni tidak memengaruhi status. Kamar berisi 1 orang tetap **terisi**, karena penghuni kedua hanya masuk bersama atau atas ajakan penghuni pertama. Ini berlaku juga untuk kamar yang `accepts_roommate = true`: tempat sisa tidak ditawarkan ke publik.
 - `rooms.is_published = false` (default) menyembunyikan kamar dari halaman publik, sehingga kamar baru tidak tampil sebelum pemilik siap.
 - Halaman publik hanya menampilkan "tersedia/terisi", tanpa nama penghuni.
 
@@ -219,7 +220,11 @@ Satu sewa (`tenancies`) adalah satu tagihan untuk satu kamar. Orang yang tinggal
 
 - **Penghuni aktif:** baris dengan `moved_out_at` kosong. Jumlahnya maksimal `rooms.capacity` (default 2).
 - Batas jumlah dicek di aplikasi saat pemilik menambah penghuni, di dalam transaksi yang mengunci baris sewa (`lockForUpdate`). Index PostgreSQL tidak bisa membatasi jumlah baris.
-- Penghuni kedua bisa ditambahkan kapan saja ke sewa yang sama selama masih ada tempat. Tanggal jatuh temponya mengikuti sewa kamar.
+- **Orang kedua** hanya bisa ditambahkan kalau masih ada tempat **dan** sewa itu `accepts_roommate = true` ("bersedia berbagi kamar").
+    - Default `false`: kamar dianggap penuh walaupun baru berisi 1 orang, karena orang kedua harus kenalan penghuni (misalnya teman sekantor atau sekampus).
+    - Yang bisa mengubahnya: penghuni kamar itu dan pemilik, hanya selama sewa `active`. Tidak ada persetujuan per orang.
+    - Izin ini berlaku untuk satu kali penambahan. Setelah orang kedua ditambahkan, atau salah satu penghuni keluar, nilainya kembali `false`.
+    - Tanggal jatuh tempo penghuni kedua mengikuti sewa kamar.
 - Sewa `active`/`inactive` selalu punya minimal satu penghuni aktif. Kalau penghuni aktif terakhir keluar, sewa ikut berakhir (lihat "Penghuni keluar").
 - Satu akun hanya boleh aktif di satu kamar. Penghuni tanpa akun (`user_id` kosong) tidak terkena aturan ini, karena unique index PostgreSQL menganggap setiap `NULL` berbeda:
 
