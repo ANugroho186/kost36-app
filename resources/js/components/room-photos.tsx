@@ -1,42 +1,62 @@
 import { Form } from '@inertiajs/react';
 import RoomPhotoController from '@/actions/App/Http/Controllers/Owner/RoomPhotoController';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { firstErrorFor } from '@/lib/form-errors';
 
 export type RoomPhoto = {
     id: number;
     url: string;
 };
 
-// Error unggahan bisa ada di "photos" (jumlah) atau "photos.0", "photos.1", dst. (per file).
-function firstPhotoError(errors: Record<string, string>): string | undefined {
-    return Object.entries(errors).find(([key]) =>
-        key.startsWith('photos'),
-    )?.[1];
-}
-
-export function RoomPhotos({
-    roomId,
-    photos,
-    maxPhotos,
-}: {
+type RoomPhotosProps = {
     roomId: number;
+    roomNumber: string;
     photos: RoomPhoto[];
     maxPhotos: number;
-}) {
-    return (
-        <section className="mt-10 space-y-4 border-t pt-6">
-            <Heading
-                variant="small"
-                title="Photos"
-                description={`The first photo is shown on the public page. Up to ${maxPhotos} photos, JPG, PNG or WebP, 5 MB each.`}
-            />
+};
 
+/**
+ * Modal foto kamar. Tidak tertutup setelah unggah, jadikan sampul, atau hapus, supaya hasilnya
+ * langsung terlihat. Daftar foto ikut diperbarui karena halaman menerima props baru dari server.
+ */
+export function RoomPhotosDialog(props: RoomPhotosProps) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                    Photos ({props.photos.length})
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Photos of room {props.roomNumber}</DialogTitle>
+                    <DialogDescription>
+                        The first photo is shown on the public page. Up to{' '}
+                        {props.maxPhotos} photos, JPG, PNG or WebP, 5 MB each.
+                    </DialogDescription>
+                </DialogHeader>
+                <RoomPhotos {...props} />
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function RoomPhotos({ roomId, photos, maxPhotos }: RoomPhotosProps) {
+    return (
+        <div className="space-y-4">
             {photos.length > 0 && (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                     {photos.map((photo, index) => (
@@ -110,7 +130,9 @@ export function RoomPhotos({
                                     required
                                     accept="image/jpeg,image/png,image/webp"
                                 />
-                                <InputError message={firstPhotoError(errors)} />
+                                <InputError
+                                    message={firstErrorFor(errors, 'photos')}
+                                />
                             </div>
                             <Button disabled={processing}>
                                 {processing && <Spinner />}
@@ -120,6 +142,6 @@ export function RoomPhotos({
                     )}
                 </Form>
             )}
-        </section>
+        </div>
     );
 }

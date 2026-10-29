@@ -6,6 +6,7 @@ use App\Enums\ComplaintStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\ComplaintFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -49,6 +50,29 @@ class Complaint extends Model
             'status' => ComplaintStatus::class,
             'resolved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Keluhan kamar sewa itu yang dibuat sejak sewa dimulai. Keluhan penghuni lama kamar yang
+     * sama tidak ikut, karena bisa memuat cerita pribadi mereka.
+     *
+     * Versi query dari wasReportedDuring(). Keduanya harus selalu sama.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeReportedDuring(Builder $query, Tenancy $tenancy): void
+    {
+        $query->where('room_id', $tenancy->room_id)
+            ->where('created_at', '>=', $tenancy->start_date);
+    }
+
+    /**
+     * Versi satu model dari scopeReportedDuring(), dipakai ComplaintPolicy::view.
+     */
+    public function wasReportedDuring(Tenancy $tenancy): bool
+    {
+        return $this->room_id === $tenancy->room_id
+            && $this->created_at?->greaterThanOrEqualTo($tenancy->start_date) === true;
     }
 
     /**

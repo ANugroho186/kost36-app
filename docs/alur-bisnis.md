@@ -105,6 +105,17 @@ flowchart TD
     J --> K([Penghuni melihat status selesai])
 ```
 
+- Penghuni melapor dari menu "Complaints". Kamar diambil dari sewa yang sedang ia tempati, bukan dipilih di form, jadi ia tidak bisa melapor atas nama kamar lain.
+- Pelapor dan status diisi sistem. Nilai `room_id`, `reporter_id`, atau `status` yang dikirim dari form diabaikan.
+- Foto opsional, disimpan di disk privat (lihat "File" di `docs/database.md`). Kalau penyimpanan gagal di tengah jalan, foto yang sudah tersimpan ikut dihapus, supaya tidak ada foto kamar yang tertinggal tanpa catatan.
+- Pemilik mengelola keluhan semua kamar dari menu "Complaints" miliknya, dengan filter terbuka/selesai/semua:
+    - "Start work" mengubah status menjadi `in_progress`.
+    - "Resolve" mengubah status menjadi `resolved` dan mengisi `resolved_at`. Catatan perbaikan opsional (apa yang dikerjakan dan tanggalnya) masuk ke `maintenance_logs` yang tertaut ke keluhan itu.
+    - "Reopen" mengembalikan status ke `in_progress` dan mengosongkan `resolved_at`. Catatan perbaikan yang sudah ada tetap tersimpan.
+- Pemilik bisa mencatat keluhan atas nama penghuni tanpa akun dengan memilih kamarnya. `reporter_id` dibiarkan kosong, karena yang mengalami masalah bukan pemilik.
+- Menghapus keluhan hanya untuk keluhan ganda atau salah catat. Fotonya ikut dihapus dari disk, sedangkan catatan perbaikannya tetap ada dengan `complaint_id` kosong.
+- Notifikasi dikirim mulai Fase 3. Sampai saat itu, keluhan baru terlihat dari angka "keluhan terbuka" di dashboard pemilik. Angka itu juga menjadi tautan ke daftar keluhan.
+
 ## Alur pengingat harian (scheduler, 08.00 WIB)
 
 ```mermaid

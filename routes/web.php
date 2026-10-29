@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\ComplaintPhotoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Owner\ComplaintController as OwnerComplaintController;
 use App\Http\Controllers\Owner\OccupantAccountController;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\RoomController;
@@ -26,11 +29,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('tenancies/{tenancy}/accepts-roommate', RoommateConsentController::class)
         ->name('tenancies.accepts-roommate');
 
+    // Keluhan penghuni tentang kamarnya sendiri (kamar diambil dari sewa yang sedang ditempati).
+    Route::resource('complaints', ComplaintController::class)->only(['index', 'store']);
+
+    // Foto keluhan di disk privat, untuk penghuni dan pemilik. Hak akses: ComplaintPolicy::view.
+    Route::get('complaints/{complaint}/photos/{photo}', ComplaintPhotoController::class)
+        ->scopeBindings()
+        ->name('complaints.photos.show');
+
     // Halaman pemilik. Hak akses dicek per aksi lewat Policy, bukan hanya lewat awalan URL.
     Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('property', [PropertyController::class, 'edit'])->name('property.edit');
         Route::put('property', [PropertyController::class, 'update'])->name('property.update');
-        Route::resource('rooms', RoomController::class)->except('show');
+        // Tambah dan ubah kamar dibuka sebagai modal di halaman daftar, jadi tidak ada halaman create/edit.
+        Route::resource('rooms', RoomController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // scopeBindings: {photo} harus milik {room}, kalau tidak hasilnya 404.
         Route::scopeBindings()->group(function () {
@@ -39,7 +51,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('rooms/{room}/photos/{photo}', [RoomPhotoController::class, 'destroy'])->name('rooms.photos.destroy');
         });
 
-        Route::resource('tenancies', TenancyController::class)->only(['index', 'create', 'store', 'show']);
+        Route::resource('complaints', OwnerComplaintController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])
             ->name('tenancies.occupants.store');
 

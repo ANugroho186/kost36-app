@@ -33,7 +33,10 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Dimatikan: kalau true, Laravel membuka /storage/{path} untuk siapa pun yang memegang
+            // signed URL, tanpa lewat Policy. File privat (foto keluhan, bukti transfer) hanya
+            // disajikan lewat route aplikasi yang mengecek hak akses.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

@@ -1,5 +1,6 @@
-import { Form, Head } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import TenancyOccupantController from '@/actions/App/Http/Controllers/Owner/TenancyOccupantController';
+import { FormDialog } from '@/components/form-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import {
@@ -133,40 +134,21 @@ export default function ShowTenancy({
                             </li>
                         ))}
                     </ul>
-                </section>
-
-                {!isFull && tenancy.status === 'active' && (
-                    <section className="space-y-3 border-t pt-6">
-                        <Heading
-                            variant="small"
-                            title="Sharing the room"
-                            description={
-                                tenancy.acceptsRoommate
-                                    ? 'Open for one more person the occupant knows. This resets after the next person is added.'
-                                    : 'Marked as full. A second person can only be added once the room is opened for sharing, by the occupant or by you.'
+                    {canAddOccupant && (
+                        <FormDialog
+                            trigger={
+                                <Button variant="outline" size="sm">
+                                    Add occupant
+                                </Button>
                             }
-                        />
-                        {canToggleRoommate && (
-                            <RoommateConsentForm
-                                tenancyId={tenancy.id}
-                                accepts={tenancy.acceptsRoommate}
-                            />
-                        )}
-                    </section>
-                )}
-
-                {canAddOccupant && (
-                    <section className="space-y-4 border-t pt-6">
-                        <Heading variant="small" title="Add an occupant" />
-                        <Form
-                            {...TenancyOccupantController.store.form(
+                            title={`Add an occupant to room ${tenancy.roomNumber}`}
+                            description="Their payment date follows this room's tenancy."
+                            action={TenancyOccupantController.store.form(
                                 tenancy.id,
                             )}
-                            resetOnSuccess
-                            options={{ preserveScroll: true }}
-                            className="space-y-4"
+                            submitLabel="Add occupant"
                         >
-                            {({ processing, errors }) => (
+                            {({ errors }) => (
                                 <>
                                     <div className="grid gap-2">
                                         <Label htmlFor="nickname">
@@ -195,12 +177,29 @@ export default function ShowTenancy({
                                             message={errors.moved_in_at}
                                         />
                                     </div>
-                                    <Button disabled={processing}>
-                                        Add occupant
-                                    </Button>
                                 </>
                             )}
-                        </Form>
+                        </FormDialog>
+                    )}
+                </section>
+
+                {!isFull && tenancy.status === 'active' && (
+                    <section className="space-y-3 border-t pt-6">
+                        <Heading
+                            variant="small"
+                            title="Sharing the room"
+                            description={
+                                tenancy.acceptsRoommate
+                                    ? 'Open for one more person the occupant knows. This resets after the next person is added.'
+                                    : 'Marked as full. A second person can only be added once the room is opened for sharing, by the occupant or by you.'
+                            }
+                        />
+                        {canToggleRoommate && (
+                            <RoommateConsentForm
+                                tenancyId={tenancy.id}
+                                accepts={tenancy.acceptsRoommate}
+                            />
+                        )}
                     </section>
                 )}
             </div>

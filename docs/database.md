@@ -337,7 +337,9 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 ### File
 
 - `room_photos`: disk `public`.
-- `complaint_photos` dan `payment_proofs`: disk privat. Hanya bisa dibuka lewat route yang mengecek Policy. Foto keluhan: pemilik dan penghuni aktif kamar itu. Gambar bukti transfer: pemilik dan pengunggahnya saja, karena biasanya memuat nama dan nomor rekening bank. Batasi tipe file (jpg/png, bukti juga pdf) dan ukurannya, lalu ganti nama file saat disimpan.
+- `complaint_photos` dan `payment_proofs`: disk privat (`local`, di `storage/app/private`). Hanya bisa dibuka lewat route aplikasi yang mengecek Policy. Route bawaan Laravel untuk disk ini (`'serve' => true`, berbasis signed URL tanpa Policy) dimatikan di `config/filesystems.php`.
+    - Foto keluhan dibuka lewat `complaints/{complaint}/photos/{photo}` oleh pemilik dan penghuni kamar itu, untuk keluhan selama sewa yang sedang berjalan. Maksimal 4 foto per keluhan, JPG/PNG/WebP, 5 MB. Seperti foto kamar, gambar dibuat ulang menjadi WebP bernama acak tanpa metadata (termasuk lokasi GPS) oleh `App\Support\ImageUpload`.
+    - Gambar bukti transfer: pemilik dan pengunggahnya saja, karena biasanya memuat nama dan nomor rekening bank. Batasi tipe file (jpg/png, juga pdf) dan ukurannya, lalu ganti nama file saat disimpan.
 - File bukti transfer dihapus otomatis beberapa bulan setelah ditinjau. Catatannya tetap disimpan.
 
 ### Lain-lain
