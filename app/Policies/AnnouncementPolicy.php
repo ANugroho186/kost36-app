@@ -28,6 +28,15 @@ class AnnouncementPolicy
             && ! $announcement->published_at->isFuture();
     }
 
+    /**
+     * Halaman kelola pengumuman, termasuk yang terjadwal dan kedaluwarsa. Penghuni membaca
+     * lewat viewAny/view, yang hanya menampilkan pengumuman yang sudah tayang.
+     */
+    public function manage(User $user): bool
+    {
+        return $user->isOwner();
+    }
+
     public function create(User $user): bool
     {
         return $user->isOwner();

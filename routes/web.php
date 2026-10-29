@@ -3,6 +3,7 @@
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ComplaintPhotoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Owner\AnnouncementController;
 use App\Http\Controllers\Owner\ComplaintController as OwnerComplaintController;
 use App\Http\Controllers\Owner\OccupantAccountController;
 use App\Http\Controllers\Owner\PropertyController;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         Route::resource('complaints', OwnerComplaintController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])

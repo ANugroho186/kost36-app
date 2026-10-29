@@ -7,3 +7,15 @@ export function formatDate(date: string): string {
         year: 'numeric',
     });
 }
+
+// Tanggal + jam dari server berformat YYYY-MM-DDTHH:mm (jam dinding WIB, tanpa zona waktu),
+// sama dengan nilai input datetime-local. Dibaca sebagai waktu lokal, jadi jamnya tidak bergeser.
+export function formatDateTime(dateTime: string): string {
+    return new Date(dateTime).toLocaleString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}

@@ -39,7 +39,8 @@ test('only the owner manages announcements', function (string $actor, bool $allo
     $announcement = Announcement::factory()->for($scenario['tenancy']->room->property)->create();
     $user = $scenario[$actor];
 
-    expect($user->can('create', Announcement::class))->toBe($allowed)
+    expect($user->can('manage', Announcement::class))->toBe($allowed)
+        ->and($user->can('create', Announcement::class))->toBe($allowed)
         ->and($user->can('update', $announcement))->toBe($allowed)
         ->and($user->can('delete', $announcement))->toBe($allowed);
 })->with([

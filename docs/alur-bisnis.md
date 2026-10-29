@@ -116,6 +116,19 @@ flowchart TD
 - Menghapus keluhan hanya untuk keluhan ganda atau salah catat. Fotonya ikut dihapus dari disk, sedangkan catatan perbaikannya tetap ada dengan `complaint_id` kosong.
 - Notifikasi dikirim mulai Fase 3. Sampai saat itu, keluhan baru terlihat dari angka "keluhan terbuka" di dashboard pemilik. Angka itu juga menjadi tautan ke daftar keluhan.
 
+## Pengumuman
+
+1. Pemilik menulis pengumuman dari menu "Announcements": judul, isi, "tayang mulai" (tanggal + jam WIB, bawaannya sekarang), dan "tayang sampai" yang opsional (harus setelah tayang mulai).
+2. Status dihitung dari kedua waktu itu, tidak disimpan:
+    - _Scheduled_: belum tayang.
+    - _Live_: sedang tayang.
+    - _Expired_: sudah lewat batas tayang.
+
+    Tepat pada waktu tayang mulai, statusnya sudah _Live_. Tepat pada batas tayang, statusnya sudah _Expired_.
+
+3. Pemilik melihat semua pengumuman di halamannya, termasuk yang terjadwal dan kedaluwarsa. Penghuni, termasuk penghuni nonaktif, hanya melihat pengumuman _Live_ dari kost tempat ia tinggal: 3 terbaru di dashboard dan semuanya di menu "Announcements".
+4. Notifikasi saat pengumuman tayang dikirim mulai Fase 3.
+
 ## Alur pengingat harian (scheduler, 08.00 WIB)
 
 ```mermaid
@@ -168,7 +181,7 @@ flowchart TD
     D -- Perpanjang --> E["extended_until = hari ini + N hari"]
     E --> F([Kembali dicek saat batas baru terlewat])
     D -- Nonaktifkan --> G["status inactive, isi deactivated_at dan vacate_by"]
-    G --> H["Kamar tetap terisi, akun tetap ada, akses terbatas"]
+    G --> H["Kamar tetap terisi, akun dan semua fitur penghuni tetap ada sampai vacate_by"]
     H --> I[Notifikasi ke semua penghuni berisi tanggal pengosongan]
     I --> J{"Bukti disetujui sebelum vacate_by?"}
     J -- Ya --> K([Aktif kembali lewat alur verifikasi bukti])
