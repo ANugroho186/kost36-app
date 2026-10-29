@@ -17,6 +17,9 @@ use Inertia\Response;
 
 class RoomController extends Controller
 {
+    /**
+     * Satu halaman untuk semua urusan kamar: tambah, ubah, foto, dan hapus dibuka sebagai modal.
+     */
     public function index(): Response
     {
         Gate::authorize('viewAny', Room::class);
@@ -25,31 +28,32 @@ class RoomController extends Controller
 
         return Inertia::render('owner/rooms/index', [
             'rooms' => Room::query()
+                ->with('photos')
                 ->orderByRaw('length(number), number')
                 ->get()
                 ->map(fn (Room $room): array => [
                     'id' => $room->id,
                     'number' => $room->number,
                     'capacity' => $room->capacity,
+                    'facilities' => $room->facilities,
                     'isPublished' => $room->is_published,
                     'isOccupied' => $occupying->has($room->id),
                     'occupants' => $occupying->get($room->id)?->activeOccupants->count() ?? 0,
+                    // false kalau kamar punya sewa, keluhan, perawatan, atau inventaris.
+                    'canDelete' => ! $room->hasRelatedRecords(),
+                    // Sudah terurut menurut sort_order (lihat Room::photos()).
+                    'photos' => $room->photos
+                        ->map(fn (RoomPhoto $photo): array => [
+                            'id' => $photo->id,
+                            'url' => Storage::disk('public')->url($photo->path),
+                        ])
+                        ->all(),
                 ])
                 ->all(),
+            // Kamar baru selalu milik kost yang profilnya sudah diisi.
+            'canAddRooms' => Property::query()->exists(),
+            'maxPhotos' => StoreRoomPhotoRequest::MAX_PHOTOS_PER_ROOM,
         ]);
-    }
-
-    public function create(): Response|RedirectResponse
-    {
-        Gate::authorize('create', Room::class);
-
-        if (! Property::query()->exists()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Set up the property profile first.')]);
-
-            return to_route('owner.property.edit');
-        }
-
-        return Inertia::render('owner/rooms/create');
     }
 
     public function store(RoomRequest $request): RedirectResponse
@@ -57,6 +61,8 @@ class RoomController extends Controller
         $property = Property::query()->oldest('id')->first();
 
         if ($property === null) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Set up the property profile first.')]);
+
             return to_route('owner.property.edit');
         }
 
@@ -65,31 +71,6 @@ class RoomController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Room added.')]);
 
         return to_route('owner.rooms.index');
-    }
-
-    public function edit(Room $room): Response
-    {
-        Gate::authorize('update', $room);
-
-        return Inertia::render('owner/rooms/edit', [
-            'room' => [
-                'id' => $room->id,
-                'number' => $room->number,
-                'capacity' => $room->capacity,
-                'facilities' => $room->facilities,
-                'isPublished' => $room->is_published,
-            ],
-            'occupants' => $room->activeOccupantCount(),
-            'canDelete' => ! $room->hasRelatedRecords(),
-            // Sudah terurut menurut sort_order (lihat Room::photos()).
-            'photos' => $room->photos
-                ->map(fn (RoomPhoto $photo): array => [
-                    'id' => $photo->id,
-                    'url' => Storage::disk('public')->url($photo->path),
-                ])
-                ->all(),
-            'maxPhotos' => StoreRoomPhotoRequest::MAX_PHOTOS_PER_ROOM,
-        ]);
     }
 
     public function update(RoomRequest $request, Room $room): RedirectResponse

@@ -42,7 +42,7 @@ test('uploaded photos are re-encoded as webp with a random name', function () {
             ],
         ])
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('owner.rooms.edit', $room));
+        ->assertRedirect(route('owner.rooms.index'));
 
     $photos = $room->photos()->get();
 
@@ -78,7 +78,7 @@ test('only images within the size limits are accepted', function (UploadedFile $
     $room = Room::factory()->create();
 
     $this->actingAs(User::factory()->owner()->create())
-        ->from(route('owner.rooms.edit', $room))
+        ->from(route('owner.rooms.index'))
         ->post(route('owner.rooms.photos.store', $room), ['photos' => [$file]])
         ->assertSessionHasErrors('photos.0');
 
@@ -94,7 +94,7 @@ test('oversized photos explain how to fix them', function (UploadedFile $file) {
 
     // assertInvalid memeriksa bahwa pesan error untuk photos.0 mengandung teks ini.
     $this->actingAs(User::factory()->owner()->create())
-        ->from(route('owner.rooms.edit', $room))
+        ->from(route('owner.rooms.index'))
         ->post(route('owner.rooms.photos.store', $room), ['photos' => [$file]])
         ->assertInvalid(['photos.0' => 'normal mode']);
 })->with([
@@ -107,7 +107,7 @@ test('a room can have at most eight photos', function () {
     RoomPhoto::factory()->for($room)->count(8)->create();
 
     $this->actingAs(User::factory()->owner()->create())
-        ->from(route('owner.rooms.edit', $room))
+        ->from(route('owner.rooms.index'))
         ->post(route('owner.rooms.photos.store', $room), ['photos' => [UploadedFile::fake()->image('ke-9.jpg')]])
         ->assertSessionHasErrors('photos');
 
@@ -122,7 +122,7 @@ test('the owner chooses the cover photo without shuffling the others', function 
 
     $this->actingAs(User::factory()->owner()->create())
         ->put(route('owner.rooms.photos.cover', [$room, $third]))
-        ->assertRedirect(route('owner.rooms.edit', $room));
+        ->assertRedirect(route('owner.rooms.index'));
 
     expect($room->photos()->pluck('id')->all())->toBe([$third->id, $first->id, $second->id]);
 });
@@ -134,7 +134,7 @@ test('deleting a photo also deletes its file', function () {
 
     $this->actingAs(User::factory()->owner()->create())
         ->delete(route('owner.rooms.photos.destroy', [$room, $photo]))
-        ->assertRedirect(route('owner.rooms.edit', $room));
+        ->assertRedirect(route('owner.rooms.index'));
 
     expect(RoomPhoto::find($photo->id))->toBeNull();
     Storage::disk('public')->assertMissing('rooms/contoh.webp');

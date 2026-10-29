@@ -1,5 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
+import TenancyController from '@/actions/App/Http/Controllers/Owner/TenancyController';
+import { FormDialog } from '@/components/form-dialog';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,8 +12,17 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { formatDate } from '@/lib/dates';
-import { create, index, show } from '@/routes/owner/tenancies';
+import { index, show } from '@/routes/owner/tenancies';
 
 // Sama persis dengan yang dikirim TenancyController::index().
 type OwnerTenancy = {
@@ -22,12 +34,104 @@ type OwnerTenancy = {
     acceptsRoommate: boolean;
 };
 
+type Room = { id: number; number: string };
+
 type Props = {
     tenancies: OwnerTenancy[];
-    availableRooms: number;
+    // Hanya kamar yang sedang kosong.
+    availableRooms: Room[];
+    today: string;
 };
 
-export default function TenanciesIndex({ tenancies, availableRooms }: Props) {
+function StartTenancyDialog({
+    rooms,
+    today,
+}: {
+    rooms: Room[];
+    today: string;
+}) {
+    return (
+        <FormDialog
+            trigger={<Button>Start a tenancy</Button>}
+            title="Start a tenancy"
+            description="The next payment date is calculated from the start date and the months paid upfront."
+            action={TenancyController.store.form()}
+            submitLabel="Start tenancy"
+        >
+            {({ errors }) => (
+                <>
+                    <div className="grid gap-2">
+                        <Label htmlFor="room_id">Room</Label>
+                        <Select name="room_id" required>
+                            <SelectTrigger id="room_id" className="w-full">
+                                <SelectValue placeholder="Choose an empty room" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {rooms.map((room) => (
+                                    <SelectItem
+                                        key={room.id}
+                                        value={String(room.id)}
+                                    >
+                                        Room {room.number}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.room_id} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="start_date">Start date</Label>
+                        <Input
+                            id="start_date"
+                            name="start_date"
+                            type="date"
+                            required
+                            defaultValue={today}
+                        />
+                        <InputError message={errors.start_date} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="months_paid">Months paid upfront</Label>
+                        <Input
+                            id="months_paid"
+                            name="months_paid"
+                            type="number"
+                            required
+                            min={1}
+                            max={12}
+                            defaultValue={1}
+                        />
+                        <InputError message={errors.months_paid} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="nickname">
+                            First occupant&apos;s nickname
+                        </Label>
+                        <Input
+                            id="nickname"
+                            name="nickname"
+                            required
+                            maxLength={50}
+                        />
+                        <p className="text-sm text-muted-foreground">
+                            A login account can be linked later.
+                        </p>
+                        <InputError message={errors.nickname} />
+                    </div>
+                </>
+            )}
+        </FormDialog>
+    );
+}
+
+export default function TenanciesIndex({
+    tenancies,
+    availableRooms,
+    today,
+}: Props) {
     return (
         <>
             <Head title="Tenancies" />
@@ -38,10 +142,11 @@ export default function TenanciesIndex({ tenancies, availableRooms }: Props) {
                         title="Tenancies"
                         description="Rooms that are currently lived in."
                     />
-                    {availableRooms > 0 ? (
-                        <Button asChild>
-                            <Link href={create()}>Start a tenancy</Link>
-                        </Button>
+                    {availableRooms.length > 0 ? (
+                        <StartTenancyDialog
+                            rooms={availableRooms}
+                            today={today}
+                        />
                     ) : (
                         <p className="text-sm text-muted-foreground">
                             All rooms are occupied.

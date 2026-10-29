@@ -51,17 +51,8 @@ class ComplaintController extends Controller
         return Inertia::render('tenant/complaints/index', [
             'roomNumber' => $tenancy?->room->number,
             'complaints' => $complaints,
-        ]);
-    }
-
-    public function create(#[CurrentUser] User $user): Response
-    {
-        $room = $user->currentTenancy()?->room;
-        abort_if($room === null, 403);
-        Gate::authorize('create', [Complaint::class, $room]);
-
-        return Inertia::render('tenant/complaints/create', [
-            'roomNumber' => $room->number,
+            // Form lapor dibuka sebagai modal di halaman ini, hanya untuk yang boleh melapor.
+            'canReport' => $tenancy !== null && Gate::allows('create', [Complaint::class, $tenancy->room]),
             'maxPhotos' => ReportComplaint::MAX_PHOTOS,
         ]);
     }

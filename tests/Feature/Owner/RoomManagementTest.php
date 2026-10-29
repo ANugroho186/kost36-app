@@ -39,6 +39,29 @@ test('the owner sees every room with its occupancy', function () {
         );
 });
 
+test('each room carries what its edit, photo and delete dialogs need', function () {
+    Storage::fake('public');
+    $owner = User::factory()->owner()->create();
+    $property = Property::factory()->for($owner, 'owner')->create();
+    $fresh = Room::factory()->for($property)->create(['number' => '1', 'facilities' => 'Kasur, lemari']);
+    $photo = RoomPhoto::factory()->for($fresh)->create(['path' => 'rooms/contoh.webp']);
+    $withHistory = Room::factory()->for($property)->create(['number' => '2']);
+    Complaint::factory()->for($withHistory)->create();
+
+    $this->actingAs($owner)
+        ->get(route('owner.rooms.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('canAddRooms', true)
+            ->where('maxPhotos', 8)
+            ->where('rooms.0.facilities', 'Kasur, lemari')
+            ->where('rooms.0.canDelete', true)
+            ->where('rooms.0.photos', [['id' => $photo->id, 'url' => Storage::disk('public')->url('rooms/contoh.webp')]])
+            // Kamar dengan riwayat tidak menawarkan tombol hapus.
+            ->where('rooms.1.canDelete', false)
+            ->where('rooms.1.photos', []),
+        );
+});
+
 test('the owner adds a room', function () {
     $owner = User::factory()->owner()->create();
     $property = Property::factory()->for($owner, 'owner')->create();
@@ -71,8 +94,13 @@ test('an unticked publish box hides the room', function () {
 test('rooms cannot be added before the property profile exists', function () {
     $owner = User::factory()->owner()->create();
 
-    $this->actingAs($owner)->get(route('owner.rooms.create'))->assertRedirect(route('owner.property.edit'));
-    $this->actingAs($owner)->post(route('owner.rooms.store'), roomData())->assertRedirect(route('owner.property.edit'));
+    $this->actingAs($owner)
+        ->get(route('owner.rooms.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('canAddRooms', false));
+    $this->actingAs($owner)
+        ->post(route('owner.rooms.store'), roomData())
+        ->assertRedirect(route('owner.property.edit'))
+        ->assertInertiaFlash('toast.type', 'error');
 
     expect(Room::count())->toBe(0);
 });
@@ -83,7 +111,7 @@ test('room numbers must be unique within the property', function () {
     Room::factory()->for($property)->create(['number' => '5']);
 
     $this->actingAs($owner)
-        ->from(route('owner.rooms.create'))
+        ->from(route('owner.rooms.index'))
         ->post(route('owner.rooms.store'), roomData(['number' => '5']))
         ->assertSessionHasErrors('number');
 });
@@ -93,7 +121,7 @@ test('capacity must be between one and two people', function (int $capacity) {
     Property::factory()->for($owner, 'owner')->create();
 
     $this->actingAs($owner)
-        ->from(route('owner.rooms.create'))
+        ->from(route('owner.rooms.index'))
         ->post(route('owner.rooms.store'), roomData(['capacity' => $capacity]))
         ->assertSessionHasErrors('capacity');
 })->with([0, 3]);
@@ -104,7 +132,7 @@ test('capacity cannot drop below the current occupants', function () {
     TenancyOccupant::factory()->for($tenancy)->count(2)->create();
 
     $this->actingAs($owner)
-        ->from(route('owner.rooms.edit', $tenancy->room))
+        ->from(route('owner.rooms.index'))
         ->put(route('owner.rooms.update', $tenancy->room), roomData([
             'number' => $tenancy->room->number,
             'capacity' => 1,
@@ -158,9 +186,10 @@ test('rooms with history are kept, with a clear message instead of an error', fu
     };
 
     $this->actingAs($owner)
-        ->from(route('owner.rooms.edit', $room))
+        ->from(route('owner.rooms.index'))
         ->delete(route('owner.rooms.destroy', $room))
-        ->assertRedirect(route('owner.rooms.edit', $room));
+        ->assertRedirect(route('owner.rooms.index'))
+        ->assertInertiaFlash('toast.type', 'error');
 
     expect(Room::find($room->id))->not->toBeNull();
 })->with(['sewa', 'keluhan']);

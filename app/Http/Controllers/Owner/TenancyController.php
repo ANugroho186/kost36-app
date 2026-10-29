@@ -10,7 +10,6 @@ use App\Models\Tenancy;
 use App\Models\TenancyOccupant;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,6 +18,7 @@ class TenancyController extends Controller
 {
     /**
      * Sewa yang sedang menempati kamar (active/inactive). Riwayat sewa ended ditampilkan nanti.
+     * Form sewa baru dibuka sebagai modal di halaman ini.
      */
     public function index(): Response
     {
@@ -28,39 +28,27 @@ class TenancyController extends Controller
             ->occupying()
             ->with(['room', 'activeOccupants'])
             ->get()
-            ->sortBy(fn (Tenancy $tenancy): string => $tenancy->room->number, SORT_NATURAL)
-            ->map(fn (Tenancy $tenancy): array => [
-                'id' => $tenancy->id,
-                'roomNumber' => $tenancy->room->number,
-                'status' => $tenancy->status->value,
-                'paidUntil' => $tenancy->paid_until->toDateString(),
-                'occupants' => $tenancy->activeOccupants->pluck('nickname')->filter()->values()->all(),
-                'acceptsRoommate' => $tenancy->accepts_roommate,
-            ])
-            ->values()
-            ->all();
+            ->sortBy(fn (Tenancy $tenancy): string => $tenancy->room->number, SORT_NATURAL);
 
         return Inertia::render('owner/tenancies/index', [
-            'tenancies' => $tenancies,
-            'availableRooms' => Room::query()->count() - count($tenancies),
-        ]);
-    }
-
-    public function create(Request $request): Response
-    {
-        Gate::authorize('create', Tenancy::class);
-
-        $occupiedRoomIds = Tenancy::query()->occupying()->pluck('room_id');
-
-        return Inertia::render('owner/tenancies/create', [
-            'rooms' => Room::query()
-                ->whereNotIn('id', $occupiedRoomIds)
+            'tenancies' => $tenancies
+                ->map(fn (Tenancy $tenancy): array => [
+                    'id' => $tenancy->id,
+                    'roomNumber' => $tenancy->room->number,
+                    'status' => $tenancy->status->value,
+                    'paidUntil' => $tenancy->paid_until->toDateString(),
+                    'occupants' => $tenancy->activeOccupants->pluck('nickname')->filter()->values()->all(),
+                    'acceptsRoommate' => $tenancy->accepts_roommate,
+                ])
+                ->values()
+                ->all(),
+            // Pilihan kamar di form sewa baru: hanya yang sedang kosong.
+            'availableRooms' => Room::query()
+                ->whereNotIn('id', $tenancies->pluck('room_id'))
                 ->orderByRaw('length(number), number')
                 ->get()
                 ->map(fn (Room $room): array => ['id' => $room->id, 'number' => $room->number])
                 ->all(),
-            // Kamar bisa dipilih lebih dulu lewat ?room=ID, misalnya dari halaman kamar.
-            'selectedRoomId' => $request->integer('room') ?: null,
             'today' => CarbonImmutable::today()->toDateString(),
         ]);
     }

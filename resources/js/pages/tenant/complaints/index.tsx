@@ -1,7 +1,10 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import ComplaintController from '@/actions/App/Http/Controllers/ComplaintController';
 import type { ComplaintStatus } from '@/components/complaint-status-badge';
 import { ComplaintStatusBadge } from '@/components/complaint-status-badge';
+import { FormDialog } from '@/components/form-dialog';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -10,8 +13,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/dates';
-import { create, index } from '@/routes/complaints';
+import { firstErrorFor } from '@/lib/form-errors';
+import { index } from '@/routes/complaints';
 
 // Sama persis dengan yang dikirim ComplaintController::index().
 type TenantComplaint = {
@@ -27,9 +34,80 @@ type TenantComplaint = {
 type Props = {
     roomNumber: string | null;
     complaints: TenantComplaint[];
+    canReport: boolean;
+    maxPhotos: number;
 };
 
-export default function TenantComplaints({ roomNumber, complaints }: Props) {
+function ReportComplaintDialog({
+    roomNumber,
+    maxPhotos,
+}: {
+    roomNumber: string;
+    maxPhotos: number;
+}) {
+    return (
+        <FormDialog
+            trigger={<Button>Report a problem</Button>}
+            title="Report a problem"
+            description={`For room ${roomNumber}. The owner and your roommate can see this complaint.`}
+            action={ComplaintController.store.form()}
+            submitLabel="Send complaint"
+        >
+            {({ errors }) => (
+                <>
+                    <div className="grid gap-2">
+                        <Label htmlFor="title">What is the problem?</Label>
+                        <Input
+                            id="title"
+                            name="title"
+                            required
+                            maxLength={100}
+                            placeholder="Leaking tap"
+                        />
+                        <InputError message={errors.title} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="description">Details</Label>
+                        <Textarea
+                            id="description"
+                            name="description"
+                            required
+                            rows={4}
+                            maxLength={2000}
+                            placeholder="Where it is, since when, and how bad it is"
+                        />
+                        <InputError message={errors.description} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="photos">Photos (optional)</Label>
+                        <Input
+                            id="photos"
+                            name="photos[]"
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                            Up to {maxPhotos} photos, JPG, PNG or WebP, 5 MB
+                            each. Only the owner and your roommate can open
+                            them. Location data is removed.
+                        </p>
+                        <InputError message={firstErrorFor(errors, 'photos')} />
+                    </div>
+                </>
+            )}
+        </FormDialog>
+    );
+}
+
+export default function TenantComplaints({
+    roomNumber,
+    complaints,
+    canReport,
+    maxPhotos,
+}: Props) {
     return (
         <>
             <Head title="Complaints" />
@@ -44,10 +122,11 @@ export default function TenantComplaints({ roomNumber, complaints }: Props) {
                                 : `Problems reported for room ${roomNumber}, by you or your roommate.`
                         }
                     />
-                    {roomNumber !== null && (
-                        <Button asChild>
-                            <Link href={create()}>Report a problem</Link>
-                        </Button>
+                    {canReport && roomNumber !== null && (
+                        <ReportComplaintDialog
+                            roomNumber={roomNumber}
+                            maxPhotos={maxPhotos}
+                        />
                     )}
                 </div>
 

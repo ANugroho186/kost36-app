@@ -55,7 +55,7 @@ test('an occupied room cannot get a second tenancy', function () {
     $tenancy = Tenancy::factory()->inactive()->create();
 
     $this->actingAs(User::factory()->owner()->create())
-        ->from(route('owner.tenancies.create'))
+        ->from(route('owner.tenancies.index'))
         ->post(route('owner.tenancies.store'), startTenancyData($tenancy->room))
         ->assertSessionHasErrors('room_id');
 
@@ -78,9 +78,9 @@ test('two tenancies started at the same moment end in a clear message, not an er
     });
 
     $this->actingAs(User::factory()->owner()->create())
-        ->from(route('owner.tenancies.create'))
+        ->from(route('owner.tenancies.index'))
         ->post(route('owner.tenancies.store'), startTenancyData($room))
-        ->assertRedirect(route('owner.tenancies.create'))
+        ->assertRedirect(route('owner.tenancies.index'))
         ->assertSessionHasErrors('room_id');
 });
 
@@ -88,7 +88,7 @@ test('months paid upfront must be between 1 and 12', function (int $months) {
     $room = Room::factory()->create();
 
     $this->actingAs(User::factory()->owner()->create())
-        ->from(route('owner.tenancies.create'))
+        ->from(route('owner.tenancies.index'))
         ->post(route('owner.tenancies.store'), startTenancyData($room, ['months_paid' => $months]))
         ->assertSessionHasErrors('months_paid');
 })->with([0, 13]);
@@ -104,18 +104,19 @@ test('the owner sees occupied rooms and their occupants', function () {
             ->where('tenancies.0.roomNumber', '1')
             ->where('tenancies.0.occupants', ['Budi', 'Andi'])
             ->where('tenancies.2.status', 'inactive')
-            ->where('availableRooms', 1),
+            ->has('availableRooms', 1),
         );
 });
 
 test('the start form only offers empty rooms', function () {
     $this->seed(DemoSeeder::class);
+    $emptyRoom = Room::firstWhere('number', '4');
 
     $this->actingAs(User::firstWhere('username', 'pemilik'))
-        ->get(route('owner.tenancies.create'))
+        ->get(route('owner.tenancies.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('rooms', 1)
-            ->where('rooms.0.number', '4'),
+            ->where('availableRooms', [['id' => $emptyRoom->id, 'number' => '4']])
+            ->where('today', today()->toDateString()),
         );
 });
 

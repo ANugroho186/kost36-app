@@ -64,18 +64,19 @@ test('people without a room see an empty complaint page', function () {
         ->get(route('complaints.index'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('roomNumber', null)
-            ->where('complaints', []),
+            ->where('complaints', [])
+            ->where('canReport', false),
         );
 });
 
-test('occupants open the report form for their own room', function () {
+test('occupants are offered the report form for their own room', function () {
     $scenario = accessScenario();
 
     $this->actingAs($scenario['roommate'])
-        ->get(route('complaints.create'))
+        ->get(route('complaints.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->component('tenant/complaints/create')
             ->where('roomNumber', $scenario['tenancy']->room->number)
+            ->where('canReport', true)
             ->where('maxPhotos', 4),
         );
 });
@@ -177,7 +178,9 @@ test('complaints are validated', function (array $input, array $errors) {
 test('only people living in a room can report from this page', function (string $actor) {
     $scenario = accessScenario();
 
-    $this->actingAs($scenario[$actor])->get(route('complaints.create'))->assertForbidden();
+    $this->actingAs($scenario[$actor])
+        ->get(route('complaints.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('canReport', false));
     // Data kosong tetap 403, bukan error validasi: hak akses dicek lebih dulu.
     $this->actingAs($scenario[$actor])->post(route('complaints.store'), [])->assertForbidden();
 
@@ -192,7 +195,6 @@ test('guests are sent to the login page', function (string $method, string $rout
     $this->call($method, route($route))->assertRedirect(route('login'));
 })->with([
     ['GET', 'complaints.index'],
-    ['GET', 'complaints.create'],
     ['POST', 'complaints.store'],
 ]);
 

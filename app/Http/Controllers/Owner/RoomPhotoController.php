@@ -35,7 +35,7 @@ class RoomPhotoController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Photos uploaded.')]);
 
-        return to_route('owner.rooms.edit', $room);
+        return to_route('owner.rooms.index');
     }
 
     /**
@@ -54,7 +54,7 @@ class RoomPhotoController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Cover photo updated.')]);
 
-        return to_route('owner.rooms.edit', $room);
+        return to_route('owner.rooms.index');
     }
 
     public function destroy(Room $room, RoomPhoto $photo): RedirectResponse
@@ -66,6 +66,6 @@ class RoomPhotoController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Photo deleted.')]);
 
-        return to_route('owner.rooms.edit', $room);
+        return to_route('owner.rooms.index');
     }
 }

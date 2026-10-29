@@ -29,7 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('tenancies.accepts-roommate');
 
     // Keluhan penghuni tentang kamarnya sendiri (kamar diambil dari sewa yang sedang ditempati).
-    Route::resource('complaints', ComplaintController::class)->only(['index', 'create', 'store']);
+    Route::resource('complaints', ComplaintController::class)->only(['index', 'store']);
 
     // Foto keluhan di disk privat, untuk penghuni dan pemilik. Hak akses: ComplaintPolicy::view.
     Route::get('complaints/{complaint}/photos/{photo}', ComplaintPhotoController::class)
@@ -40,7 +40,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('property', [PropertyController::class, 'edit'])->name('property.edit');
         Route::put('property', [PropertyController::class, 'update'])->name('property.update');
-        Route::resource('rooms', RoomController::class)->except('show');
+        // Tambah dan ubah kamar dibuka sebagai modal di halaman daftar, jadi tidak ada halaman create/edit.
+        Route::resource('rooms', RoomController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // scopeBindings: {photo} harus milik {room}, kalau tidak hasilnya 404.
         Route::scopeBindings()->group(function () {
@@ -49,7 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('rooms/{room}/photos/{photo}', [RoomPhotoController::class, 'destroy'])->name('rooms.photos.destroy');
         });
 
-        Route::resource('tenancies', TenancyController::class)->only(['index', 'create', 'store', 'show']);
+        Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])
             ->name('tenancies.occupants.store');
 

@@ -30,16 +30,13 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     'buka profil kost' => ['get', 'owner.property.edit', 'none'],
     'simpan profil kost' => ['put', 'owner.property.update', 'none'],
     'daftar kamar' => ['get', 'owner.rooms.index', 'none'],
-    'form tambah kamar' => ['get', 'owner.rooms.create', 'none'],
     'simpan kamar baru' => ['post', 'owner.rooms.store', 'none'],
-    'form ubah kamar' => ['get', 'owner.rooms.edit', 'room'],
     'ubah kamar' => ['put', 'owner.rooms.update', 'room'],
     'hapus kamar' => ['delete', 'owner.rooms.destroy', 'room'],
     'unggah foto kamar' => ['post', 'owner.rooms.photos.store', 'room'],
     'jadikan foto sampul' => ['put', 'owner.rooms.photos.cover', 'photo'],
     'hapus foto kamar' => ['delete', 'owner.rooms.photos.destroy', 'photo'],
     'daftar sewa' => ['get', 'owner.tenancies.index', 'none'],
-    'form sewa baru' => ['get', 'owner.tenancies.create', 'none'],
     'simpan sewa baru' => ['post', 'owner.tenancies.store', 'none'],
     'detail sewa sendiri versi pemilik' => ['get', 'owner.tenancies.show', 'tenancy'],
     'tambah penghuni ke kamar sendiri' => ['post', 'owner.tenancies.occupants.store', 'tenancy'],
@@ -53,10 +50,8 @@ test('guests are sent to the login page', function () {
 
 test('the owner can open the owner pages', function () {
     $owner = User::factory()->owner()->create();
-    $room = Room::factory()->create();
 
     $this->actingAs($owner)->get(route('owner.property.edit'))->assertOk();
     $this->actingAs($owner)->get(route('owner.rooms.index'))->assertOk();
-    $this->actingAs($owner)->get(route('owner.rooms.create'))->assertOk();
-    $this->actingAs($owner)->get(route('owner.rooms.edit', $room))->assertOk();
+    $this->actingAs($owner)->get(route('owner.tenancies.index'))->assertOk();
 });
