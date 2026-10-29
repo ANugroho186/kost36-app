@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\AnnouncementStatus;
 use App\Models\Announcement;
 use App\Models\User;
 
@@ -16,7 +17,9 @@ class AnnouncementPolicy
     }
 
     /**
-     * Penghuni hanya membaca pengumuman kost tempat ia tinggal, dan hanya yang sudah tayang.
+     * Penghuni hanya membaca pengumuman kost tempat ia tinggal, dan hanya yang sedang tayang:
+     * yang terjadwal belum boleh terlihat, dan yang kedaluwarsa tidak ditampilkan lagi.
+     * Aturan waktunya sama dengan Announcement::scopeLive() yang dipakai daftar penghuni.
      */
     public function view(User $user, Announcement $announcement): bool
     {
@@ -25,7 +28,16 @@ class AnnouncementPolicy
         }
 
         return $user->currentTenancy()?->room->property_id === $announcement->property_id
-            && ! $announcement->published_at->isFuture();
+            && $announcement->status === AnnouncementStatus::Live;
+    }
+
+    /**
+     * Halaman kelola pengumuman, termasuk yang terjadwal dan kedaluwarsa. Penghuni membaca
+     * lewat viewAny/view, yang hanya menampilkan pengumuman yang sudah tayang.
+     */
+    public function manage(User $user): bool
+    {
+        return $user->isOwner();
     }
 
     public function create(User $user): bool

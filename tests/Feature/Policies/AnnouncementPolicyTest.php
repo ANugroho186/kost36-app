@@ -34,12 +34,21 @@ test('announcements scheduled for later are hidden from tenants', function () {
         ->and($scenario['owner']->can('view', $scheduled))->toBeTrue();
 });
 
+test('expired announcements are hidden from tenants', function () {
+    $scenario = accessScenario();
+    $expired = Announcement::factory()->for($scenario['tenancy']->room->property)->expired()->create();
+
+    expect($scenario['occupant']->can('view', $expired))->toBeFalse()
+        ->and($scenario['owner']->can('view', $expired))->toBeTrue();
+});
+
 test('only the owner manages announcements', function (string $actor, bool $allowed) {
     $scenario = accessScenario();
     $announcement = Announcement::factory()->for($scenario['tenancy']->room->property)->create();
     $user = $scenario[$actor];
 
-    expect($user->can('create', Announcement::class))->toBe($allowed)
+    expect($user->can('manage', Announcement::class))->toBe($allowed)
+        ->and($user->can('create', Announcement::class))->toBe($allowed)
         ->and($user->can('update', $announcement))->toBe($allowed)
         ->and($user->can('delete', $announcement))->toBe($allowed);
 })->with([

@@ -1,5 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { CalendarClock, KeyRound, TriangleAlert, Users } from 'lucide-react';
+import type { TenantAnnouncement } from '@/components/announcement-list';
+import { AnnouncementList } from '@/components/announcement-list';
+import Heading from '@/components/heading';
 import { RoommateConsentForm } from '@/components/roommate-consent-form';
 import TextLink from '@/components/text-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -12,6 +15,7 @@ import {
 } from '@/components/ui/card';
 import { formatDate } from '@/lib/dates';
 import { dashboard } from '@/routes';
+import { index as announcementsIndex } from '@/routes/announcements';
 import { edit as editSecurity } from '@/routes/security';
 
 // Sama persis dengan yang dikirim DashboardController::tenant().
@@ -29,11 +33,14 @@ type TenantTenancy = {
 type Props = {
     tenancy: TenantTenancy | null;
     hasTemporaryPassword: boolean;
+    // 3 pengumuman terbaru yang sedang tayang. Semuanya ada di halaman Announcements.
+    announcements: TenantAnnouncement[];
 };
 
 export default function TenantDashboard({
     tenancy,
     hasTemporaryPassword,
+    announcements,
 }: Props) {
     return (
         <>
@@ -134,6 +141,23 @@ export default function TenantDashboard({
                                     />
                                 </CardContent>
                             </Card>
+                        )}
+
+                        {announcements.length > 0 && (
+                            <section className="space-y-3 pt-2">
+                                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                    <Heading
+                                        variant="small"
+                                        title="Latest announcements"
+                                    />
+                                    <TextLink href={announcementsIndex()}>
+                                        See all
+                                    </TextLink>
+                                </div>
+                                <AnnouncementList
+                                    announcements={announcements}
+                                />
+                            </section>
                         )}
                     </>
                 )}

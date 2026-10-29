@@ -33,30 +33,30 @@ Orang kedua hanya bisa masuk kalau kamar berstatus **"bersedia berbagi kamar"**,
 
 Semua aturan ini dicek di server lewat Policy (`app/Policies`) dan diuji untuk setiap jenis pengguna di `tests/Feature/Policies`. "Penghuni" berarti penghuni yang belum keluar dari sewa `active`/`inactive`. Penghuni yang sudah keluar tidak punya akses apa pun ke data kamar lamanya.
 
-| Aksi                                   | Pemilik kost                      | Penghuni (dirinya/kamarnya)                | Teman sekamar        | Penghuni kamar lain  |
-| -------------------------------------- | --------------------------------- | ------------------------------------------ | -------------------- | -------------------- |
-| Lihat sewa dan `paid_until`            | Ya                                | Ya                                         | Ya                   | Tidak                |
-| Kelola sewa (buat, ubah, keputusan)    | Ya                                | Tidak                                      | Tidak                | Tidak                |
-| Ubah status "bersedia berbagi kamar"   | Ya                                | Ya, selama sewa aktif                      | Ya                   | Tidak                |
-| Lihat status bukti transfer            | Ya                                | Ya                                         | Ya                   | Tidak                |
-| Buka gambar bukti transfer             | Ya                                | Hanya pengunggah                           | Tidak                | Tidak                |
-| Unggah bukti transfer                  | Ya, atas nama penghuni            | Ya                                         | Ya                   | Tidak                |
-| Setujui/tolak bukti                    | Ya, hanya yang `pending`          | Tidak                                      | Tidak                | Tidak                |
-| Lihat keluhan kamar                    | Ya                                | Ya, selama sewa berjalan                   | Ya                   | Tidak                |
-| Lapor keluhan                          | Ya, atas nama penghuni            | Ya                                         | Ya                   | Tidak                |
-| Ubah status atau hapus keluhan         | Ya                                | Tidak                                      | Tidak                | Tidak                |
-| Baca pengumuman                        | Ya, termasuk yang terjadwal       | Ya, yang sudah tayang                      | Ya                   | Ya, kost yang sama   |
-| Kelola pengumuman                      | Ya                                | Tidak                                      | Tidak                | Tidak                |
-| Lihat paket (resi, status)             | Ya, semua paket                   | Paketnya sendiri                           | Tidak                | Tidak                |
-| Lihat nama/isi barang paket            | **Tidak**                         | Paketnya sendiri                           | Tidak                | Tidak                |
-| Daftarkan paket                        | Tidak                             | Ya, paketnya sendiri                       | Ya, paketnya sendiri | Ya, paketnya sendiri |
-| Ubah atau batalkan paket               | Tidak                             | Paketnya sendiri, selama menunggu          | Tidak                | Tidak                |
-| Centang "sudah di rumah pemilik"       | Ya, selama menunggu               | Tidak                                      | Tidak                | Tidak                |
-| Centang "sudah diterima"               | Tidak                             | Paketnya sendiri, sebelum diterima         | Tidak                | Tidak                |
-| Laporkan paket salah terima            | Tidak                             | Ya                                         | Ya                   | Ya                   |
-| Lihat laporan salah terima             | Ya                                | Hanya pelapor                              | Tidak                | Tidak                |
-| Tautkan atau selesaikan laporan        | Ya, selama belum selesai          | Tidak                                      | Tidak                | Tidak                |
-| Buat akun atau reset password penghuni | Ya, reset dengan password pemilik | Tidak (ganti password sendiri di Settings) | Tidak                | Tidak                |
+| Aksi                                   | Pemilik kost                           | Penghuni (dirinya/kamarnya)                | Teman sekamar        | Penghuni kamar lain  |
+| -------------------------------------- | -------------------------------------- | ------------------------------------------ | -------------------- | -------------------- |
+| Lihat sewa dan `paid_until`            | Ya                                     | Ya                                         | Ya                   | Tidak                |
+| Kelola sewa (buat, ubah, keputusan)    | Ya                                     | Tidak                                      | Tidak                | Tidak                |
+| Ubah status "bersedia berbagi kamar"   | Ya                                     | Ya, selama sewa aktif                      | Ya                   | Tidak                |
+| Lihat status bukti transfer            | Ya                                     | Ya                                         | Ya                   | Tidak                |
+| Buka gambar bukti transfer             | Ya                                     | Hanya pengunggah                           | Tidak                | Tidak                |
+| Unggah bukti transfer                  | Ya, atas nama penghuni                 | Ya                                         | Ya                   | Tidak                |
+| Setujui/tolak bukti                    | Ya, hanya yang `pending`               | Tidak                                      | Tidak                | Tidak                |
+| Lihat keluhan kamar                    | Ya                                     | Ya, selama sewa berjalan                   | Ya                   | Tidak                |
+| Lapor keluhan                          | Ya, atas nama penghuni                 | Ya                                         | Ya                   | Tidak                |
+| Ubah status atau hapus keluhan         | Ya                                     | Tidak                                      | Tidak                | Tidak                |
+| Baca pengumuman                        | Ya, termasuk terjadwal dan kedaluwarsa | Ya, yang sedang tayang                     | Ya                   | Ya, kost yang sama   |
+| Kelola pengumuman                      | Ya                                     | Tidak                                      | Tidak                | Tidak                |
+| Lihat paket (resi, status)             | Ya, semua paket                        | Paketnya sendiri                           | Tidak                | Tidak                |
+| Lihat nama/isi barang paket            | **Tidak**                              | Paketnya sendiri                           | Tidak                | Tidak                |
+| Daftarkan paket                        | Tidak                                  | Ya, paketnya sendiri                       | Ya, paketnya sendiri | Ya, paketnya sendiri |
+| Ubah atau batalkan paket               | Tidak                                  | Paketnya sendiri, selama menunggu          | Tidak                | Tidak                |
+| Centang "sudah di rumah pemilik"       | Ya, selama menunggu                    | Tidak                                      | Tidak                | Tidak                |
+| Centang "sudah diterima"               | Tidak                                  | Paketnya sendiri, sebelum diterima         | Tidak                | Tidak                |
+| Laporkan paket salah terima            | Tidak                                  | Ya                                         | Ya                   | Ya                   |
+| Lihat laporan salah terima             | Ya                                     | Hanya pelapor                              | Tidak                | Tidak                |
+| Tautkan atau selesaikan laporan        | Ya, selama belum selesai               | Tidak                                      | Tidak                | Tidak                |
+| Buat akun atau reset password penghuni | Ya, reset dengan password pemilik      | Tidak (ganti password sendiri di Settings) | Tidak                | Tidak                |
 
 Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()`), karena ada data yang memang tidak boleh ia lihat, yaitu isi paket penghuni.
 
@@ -116,6 +116,19 @@ flowchart TD
 - Menghapus keluhan hanya untuk keluhan ganda atau salah catat. Fotonya ikut dihapus dari disk, sedangkan catatan perbaikannya tetap ada dengan `complaint_id` kosong.
 - Notifikasi dikirim mulai Fase 3. Sampai saat itu, keluhan baru terlihat dari angka "keluhan terbuka" di dashboard pemilik. Angka itu juga menjadi tautan ke daftar keluhan.
 
+## Pengumuman
+
+1. Pemilik menulis pengumuman dari menu "Announcements": judul, isi, "tayang mulai" (tanggal + jam WIB, bawaannya sekarang), dan "tayang sampai" yang opsional (harus setelah tayang mulai).
+2. Status dihitung dari kedua waktu itu, tidak disimpan:
+    - _Scheduled_: belum tayang.
+    - _Live_: sedang tayang.
+    - _Expired_: sudah lewat batas tayang.
+
+    Tepat pada waktu tayang mulai, statusnya sudah _Live_. Tepat pada batas tayang, statusnya sudah _Expired_.
+
+3. Pemilik melihat semua pengumuman di halamannya, termasuk yang terjadwal dan kedaluwarsa. Penghuni, termasuk penghuni nonaktif, hanya melihat pengumuman _Live_ dari kost tempat ia tinggal: 3 terbaru di dashboard dan semuanya di menu "Announcements".
+4. Notifikasi saat pengumuman tayang dikirim mulai Fase 3.
+
 ## Alur pengingat harian (scheduler, 08.00 WIB)
 
 ```mermaid
@@ -168,7 +181,7 @@ flowchart TD
     D -- Perpanjang --> E["extended_until = hari ini + N hari"]
     E --> F([Kembali dicek saat batas baru terlewat])
     D -- Nonaktifkan --> G["status inactive, isi deactivated_at dan vacate_by"]
-    G --> H["Kamar tetap terisi, akun tetap ada, akses terbatas"]
+    G --> H["Kamar tetap terisi, akun dan semua fitur penghuni tetap ada sampai vacate_by"]
     H --> I[Notifikasi ke semua penghuni berisi tanggal pengosongan]
     I --> J{"Bukti disetujui sebelum vacate_by?"}
     J -- Ya --> K([Aktif kembali lewat alur verifikasi bukti])

@@ -4,6 +4,7 @@ import {
     Building2,
     KeyRound,
     LayoutGrid,
+    Megaphone,
     Wrench,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -19,7 +20,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as announcements } from '@/routes/announcements';
 import { index as complaints } from '@/routes/complaints';
+import { index as ownerAnnouncements } from '@/routes/owner/announcements';
 import { index as ownerComplaints } from '@/routes/owner/complaints';
 import { edit as editProperty } from '@/routes/owner/property';
 import { index as rooms } from '@/routes/owner/rooms';
@@ -54,9 +57,19 @@ const ownerNavItems: NavItem[] = [
         href: ownerComplaints(),
         icon: Wrench,
     },
+    {
+        title: 'Announcements',
+        href: ownerAnnouncements(),
+        icon: Megaphone,
+    },
 ];
 
 const tenantNavItems: NavItem[] = [
+    {
+        title: 'Announcements',
+        href: announcements(),
+        icon: Megaphone,
+    },
     {
         title: 'Complaints',
         href: complaints(),
