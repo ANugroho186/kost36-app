@@ -65,7 +65,10 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Kost ini hanya ada di satu kota, jadi semua waktu (jatuh tempo, "hari ini", jadwal
+    // pengumuman, pengingat 08.00) mengikuti WIB. Timestamp juga tersimpan dalam WIB.
+    // Kalau tetap UTC, "hari ini" antara 00.00 dan 06.59 WIB masih tanggal kemarin.
+    'timezone' => 'Asia/Jakarta',
 
     /*
     |--------------------------------------------------------------------------

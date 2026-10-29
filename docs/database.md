@@ -253,6 +253,8 @@ Baris terakhir yang membedakan aturan ini dari `addMonthsNoOverflow` berantai, y
 
 Semua tanggal dihitung dalam zona waktu **Asia/Jakarta**. Batas yang berlaku adalah `extended_until` kalau terisi, selain itu `paid_until`.
 
+Zona waktu aplikasi (`config/app.php`) memang `Asia/Jakarta`, jadi "hari ini" selalu tanggal WIB. Timestamp seperti `created_at` dan `published_at` juga tersimpan dalam WIB, karena kolom `timestamp` PostgreSQL tidak menyimpan zona waktu. Kost ini hanya ada di satu kota, jadi tidak perlu konversi per pengguna.
+
 | Kondisi (dibanding `paid_until`) | Status turunan                        | Akses penghuni                   |
 | -------------------------------- | ------------------------------------- | -------------------------------- |
 | Hari ini ≤ `paid_until`          | Lancar                                | Normal                           |
