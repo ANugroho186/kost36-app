@@ -178,18 +178,21 @@ test('complaints are validated', function (array $input, array $errors) {
 test('only people living in a room can report from this page', function (string $actor) {
     $scenario = accessScenario();
 
-    $this->actingAs($scenario[$actor])
-        ->get(route('complaints.index'))
-        ->assertInertia(fn (Assert $page) => $page->where('canReport', false));
     // Data kosong tetap 403, bukan error validasi: hak akses dicek lebih dulu.
     $this->actingAs($scenario[$actor])->post(route('complaints.store'), [])->assertForbidden();
 
     expect(Complaint::query()->count())->toBe(0);
 })->with([
     'penghuni yang sudah keluar' => ['formerOccupant'],
-    // Pemilik mencatat keluhan atas nama penghuni dari halamannya sendiri (langkah 1b).
+    // Pemilik mencatat keluhan atas nama penghuni dari halamannya sendiri (owner.complaints.store).
     'pemilik kost' => ['owner'],
 ]);
+
+test('the owner is sent to the owner complaint page', function () {
+    $this->actingAs(accessScenario()['owner'])
+        ->get(route('complaints.index'))
+        ->assertRedirect(route('owner.complaints.index'));
+});
 
 test('guests are sent to the login page', function (string $method, string $route) {
     $this->call($method, route($route))->assertRedirect(route('login'));

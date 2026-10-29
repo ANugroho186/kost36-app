@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import { BedDouble, Inbox, Package, Receipt, Wrench } from 'lucide-react';
 import {
@@ -9,6 +9,8 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
+import { index as complaints } from '@/routes/owner/complaints';
+import type { RouteDefinition } from '@/wayfinder';
 
 // Sama persis dengan yang dikirim DashboardController::owner(): hanya angka.
 type Props = {
@@ -24,14 +26,17 @@ function StatCard({
     title,
     value,
     description,
+    href,
 }: {
     icon: LucideIcon;
     title: string;
     value: string | number;
     description?: string;
+    // Halaman tempat angka ini bisa ditindaklanjuti. Kosong kalau fiturnya belum ada.
+    href?: RouteDefinition<'get'>;
 }) {
-    return (
-        <Card>
+    const card = (
+        <Card className={href && 'h-full transition-colors hover:bg-accent'}>
             <CardHeader>
                 <CardDescription className="flex items-center gap-2">
                     <Icon className="size-4" />
@@ -46,6 +51,8 @@ function StatCard({
             )}
         </Card>
     );
+
+    return href ? <Link href={href}>{card}</Link> : card;
 }
 
 export default function OwnerDashboard({
@@ -75,6 +82,7 @@ export default function OwnerDashboard({
                     icon={Wrench}
                     title="Open complaints"
                     value={openComplaints}
+                    href={complaints()}
                 />
                 <StatCard
                     icon={Package}

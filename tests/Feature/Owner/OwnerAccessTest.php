@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\ComplaintStatus;
+use App\Models\Complaint;
 use App\Models\Room;
 use App\Models\RoomPhoto;
 use App\Models\TenancyOccupant;
@@ -13,6 +15,8 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     // adalah sewanya sendiri: halaman pemilik tetap tertutup walaupun itu kamarnya.
     $occupancy = TenancyOccupant::factory()->create();
     $tenant = $occupancy->user;
+    // Keluhan yang ia laporkan sendiri: mengubah status atau menghapusnya tetap hak pemilik.
+    $complaint = Complaint::factory()->for($occupancy->tenancy->room)->for($tenant, 'reporter')->create();
 
     $url = match ($params) {
         'none' => route($routeName),
@@ -20,12 +24,14 @@ test('tenants cannot open or change owner pages', function (string $method, stri
         'photo' => route($routeName, [$room, $photo]),
         'tenancy' => route($routeName, $occupancy->tenancy),
         'occupant' => route($routeName, [$occupancy->tenancy, $occupancy]),
+        'complaint' => route($routeName, $complaint),
     };
 
     $this->actingAs($tenant)->{$method}($url)->assertForbidden();
 
     expect(Room::find($room->id))->not->toBeNull()
-        ->and(RoomPhoto::find($photo->id))->not->toBeNull();
+        ->and(RoomPhoto::find($photo->id))->not->toBeNull()
+        ->and($complaint->fresh()?->status)->toBe(ComplaintStatus::Reported);
 })->with([
     'buka profil kost' => ['get', 'owner.property.edit', 'none'],
     'simpan profil kost' => ['put', 'owner.property.update', 'none'],
@@ -36,6 +42,10 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     'unggah foto kamar' => ['post', 'owner.rooms.photos.store', 'room'],
     'jadikan foto sampul' => ['put', 'owner.rooms.photos.cover', 'photo'],
     'hapus foto kamar' => ['delete', 'owner.rooms.photos.destroy', 'photo'],
+    'daftar keluhan semua kamar' => ['get', 'owner.complaints.index', 'none'],
+    'catat keluhan atas nama penghuni' => ['post', 'owner.complaints.store', 'none'],
+    'ubah status keluhan sendiri' => ['put', 'owner.complaints.update', 'complaint'],
+    'hapus keluhan sendiri' => ['delete', 'owner.complaints.destroy', 'complaint'],
     'daftar sewa' => ['get', 'owner.tenancies.index', 'none'],
     'simpan sewa baru' => ['post', 'owner.tenancies.store', 'none'],
     'detail sewa sendiri versi pemilik' => ['get', 'owner.tenancies.show', 'tenancy'],
@@ -54,4 +64,5 @@ test('the owner can open the owner pages', function () {
     $this->actingAs($owner)->get(route('owner.property.edit'))->assertOk();
     $this->actingAs($owner)->get(route('owner.rooms.index'))->assertOk();
     $this->actingAs($owner)->get(route('owner.tenancies.index'))->assertOk();
+    $this->actingAs($owner)->get(route('owner.complaints.index'))->assertOk();
 });

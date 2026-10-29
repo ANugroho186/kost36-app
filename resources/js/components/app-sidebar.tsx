@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as complaints } from '@/routes/complaints';
+import { index as ownerComplaints } from '@/routes/owner/complaints';
 import { edit as editProperty } from '@/routes/owner/property';
 import { index as rooms } from '@/routes/owner/rooms';
 import { index as tenancies } from '@/routes/owner/tenancies';
@@ -47,6 +48,11 @@ const ownerNavItems: NavItem[] = [
         title: 'Tenancies',
         href: tenancies(),
         icon: KeyRound,
+    },
+    {
+        title: 'Complaints',
+        href: ownerComplaints(),
+        icon: Wrench,
     },
 ];
 

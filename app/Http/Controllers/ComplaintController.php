@@ -23,8 +23,13 @@ class ComplaintController extends Controller
     /**
      * Keluhan kamarnya selama sewa yang sedang berjalan, termasuk yang dilaporkan teman sekamar.
      */
-    public function index(#[CurrentUser] User $user): Response
+    public function index(#[CurrentUser] User $user): Response|RedirectResponse
     {
+        // Pemilik mengelola keluhan semua kamar dari halamannya sendiri.
+        if ($user->isOwner()) {
+            return to_route('owner.complaints.index');
+        }
+
         $tenancy = $user->currentTenancy();
 
         $complaints = $tenancy === null ? [] : Complaint::query()

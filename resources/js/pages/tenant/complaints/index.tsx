@@ -1,10 +1,12 @@
 import { Head } from '@inertiajs/react';
 import ComplaintController from '@/actions/App/Http/Controllers/ComplaintController';
+import { ComplaintFields } from '@/components/complaint-fields';
 import type { ComplaintStatus } from '@/components/complaint-status-badge';
+import type { ComplaintPhoto } from '@/components/complaint-photos';
+import { ComplaintPhotos } from '@/components/complaint-photos';
 import { ComplaintStatusBadge } from '@/components/complaint-status-badge';
 import { FormDialog } from '@/components/form-dialog';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,11 +15,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/dates';
-import { firstErrorFor } from '@/lib/form-errors';
 import { index } from '@/routes/complaints';
 
 // Sama persis dengan yang dikirim ComplaintController::index().
@@ -28,7 +26,7 @@ type TenantComplaint = {
     status: ComplaintStatus;
     reportedAt: string | null;
     resolvedAt: string | null;
-    photos: { id: number; url: string }[];
+    photos: ComplaintPhoto[];
 };
 
 type Props = {
@@ -54,49 +52,11 @@ function ReportComplaintDialog({
             submitLabel="Send complaint"
         >
             {({ errors }) => (
-                <>
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">What is the problem?</Label>
-                        <Input
-                            id="title"
-                            name="title"
-                            required
-                            maxLength={100}
-                            placeholder="Leaking tap"
-                        />
-                        <InputError message={errors.title} />
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="description">Details</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
-                            required
-                            rows={4}
-                            maxLength={2000}
-                            placeholder="Where it is, since when, and how bad it is"
-                        />
-                        <InputError message={errors.description} />
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="photos">Photos (optional)</Label>
-                        <Input
-                            id="photos"
-                            name="photos[]"
-                            type="file"
-                            multiple
-                            accept="image/jpeg,image/png,image/webp"
-                        />
-                        <p className="text-sm text-muted-foreground">
-                            Up to {maxPhotos} photos, JPG, PNG or WebP, 5 MB
-                            each. Only the owner and your roommate can open
-                            them. Location data is removed.
-                        </p>
-                        <InputError message={firstErrorFor(errors, 'photos')} />
-                    </div>
-                </>
+                <ComplaintFields
+                    errors={errors}
+                    maxPhotos={maxPhotos}
+                    photoNote="Only the owner and your roommate can open them."
+                />
             )}
         </FormDialog>
     );
@@ -162,26 +122,10 @@ export default function TenantComplaints({
                                 <p className="whitespace-pre-line">
                                     {complaint.description}
                                 </p>
-                                {complaint.photos.length > 0 && (
-                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                        {complaint.photos.map(
-                                            (photo, photoIndex) => (
-                                                <a
-                                                    key={photo.id}
-                                                    href={photo.url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    <img
-                                                        src={photo.url}
-                                                        alt={`Photo ${photoIndex + 1} of “${complaint.title}”`}
-                                                        className="aspect-square w-full rounded-md border object-cover"
-                                                    />
-                                                </a>
-                                            ),
-                                        )}
-                                    </div>
-                                )}
+                                <ComplaintPhotos
+                                    photos={complaint.photos}
+                                    title={complaint.title}
+                                />
                             </CardContent>
                         </Card>
                     ))
