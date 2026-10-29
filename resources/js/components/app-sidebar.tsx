@@ -20,6 +20,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as announcements } from '@/routes/announcements';
 import { index as complaints } from '@/routes/complaints';
 import { index as ownerAnnouncements } from '@/routes/owner/announcements';
 import { index as ownerComplaints } from '@/routes/owner/complaints';
@@ -64,6 +65,11 @@ const ownerNavItems: NavItem[] = [
 ];
 
 const tenantNavItems: NavItem[] = [
+    {
+        title: 'Announcements',
+        href: announcements(),
+        icon: Megaphone,
+    },
     {
         title: 'Complaints',
         href: complaints(),

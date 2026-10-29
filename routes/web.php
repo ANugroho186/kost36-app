@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ComplaintPhotoController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Owner\AnnouncementController;
+use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\ComplaintController as OwnerComplaintController;
 use App\Http\Controllers\Owner\OccupantAccountController;
 use App\Http\Controllers\Owner\PropertyController;
@@ -30,6 +31,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('tenancies/{tenancy}/accepts-roommate', RoommateConsentController::class)
         ->name('tenancies.accepts-roommate');
 
+    // Pengumuman yang sedang tayang di kost penghuni. Pemilik diarahkan ke halaman kelolanya.
+    Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+
     // Keluhan penghuni tentang kamarnya sendiri (kamar diambil dari sewa yang sedang ditempati).
     Route::resource('complaints', ComplaintController::class)->only(['index', 'store']);
 
@@ -53,7 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         Route::resource('complaints', OwnerComplaintController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('announcements', OwnerAnnouncementController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])

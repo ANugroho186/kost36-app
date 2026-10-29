@@ -7,6 +7,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Factories\AnnouncementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -61,6 +62,19 @@ class Announcement extends Model
             $this->expires_at !== null && ! $this->expires_at->isAfter($moment) => AnnouncementStatus::Expired,
             default => AnnouncementStatus::Live,
         };
+    }
+
+    /**
+     * Pengumuman yang sedang tayang. Versi query dari status Live: keduanya harus selalu sama.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeLive(Builder $query): void
+    {
+        $now = now();
+
+        $query->where('published_at', '<=', $now)
+            ->where(fn (Builder $query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', $now));
     }
 
     /**

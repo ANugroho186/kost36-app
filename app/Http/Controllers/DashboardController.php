@@ -60,6 +60,7 @@ class DashboardController extends Controller
             return Inertia::render('tenant/dashboard', [
                 'tenancy' => null,
                 'hasTemporaryPassword' => $user->has_temporary_password,
+                'announcements' => [],
             ]);
         }
 
@@ -86,6 +87,8 @@ class DashboardController extends Controller
                 // Tombol "bersedia berbagi kamar" hanya muncul kalau masih ada tempat dan sewa aktif.
                 'canToggleRoommate' => $hasSpace && Gate::allows('toggleRoommate', $tenancy),
             ],
+            // Isinya sama dengan halaman Announcements, hanya dibatasi 3 terbaru.
+            'announcements' => AnnouncementController::liveFor($tenancy, 3),
         ]);
     }
 }
