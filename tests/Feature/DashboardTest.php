@@ -21,6 +21,7 @@ test('the owner sees a summary of the property', function () {
             ->where('pendingPaymentProofs', 1)
             ->where('openComplaints', 0)
             ->where('parcels', ['waiting' => 1, 'atOwner' => 1])
+            ->where('openParcelReports', 1)
             ->where('newRentalInquiries', 1),
         );
 });

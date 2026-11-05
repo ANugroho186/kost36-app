@@ -1,6 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
-import { BedDouble, Inbox, Package, Receipt, Wrench } from 'lucide-react';
+import {
+    BedDouble,
+    Inbox,
+    Package,
+    PackageX,
+    Receipt,
+    Wrench,
+} from 'lucide-react';
 import {
     Card,
     CardContent,
@@ -10,6 +17,7 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index as complaints } from '@/routes/owner/complaints';
+import { index as parcelsIndex } from '@/routes/owner/parcels';
 import type { RouteDefinition } from '@/wayfinder';
 
 // Sama persis dengan yang dikirim DashboardController::owner(): hanya angka.
@@ -18,6 +26,7 @@ type Props = {
     pendingPaymentProofs: number;
     openComplaints: number;
     parcels: { waiting: number; atOwner: number };
+    openParcelReports: number;
     newRentalInquiries: number;
 };
 
@@ -60,6 +69,7 @@ export default function OwnerDashboard({
     pendingPaymentProofs,
     openComplaints,
     parcels,
+    openParcelReports,
     newRentalInquiries,
 }: Props) {
     return (
@@ -89,6 +99,13 @@ export default function OwnerDashboard({
                     title="Parcels at your place"
                     value={parcels.atOwner}
                     description={`${parcels.waiting} more on the way`}
+                    href={parcelsIndex()}
+                />
+                <StatCard
+                    icon={PackageX}
+                    title="Wrong-recipient reports"
+                    value={openParcelReports}
+                    href={parcelsIndex()}
                 />
                 <StatCard
                     icon={Inbox}

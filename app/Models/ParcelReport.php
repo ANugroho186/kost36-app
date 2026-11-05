@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\ParcelReportStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\ParcelReportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $resolved_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
+ * @property-read ParcelReportStatus $status
  */
 // `parcel_id` tidak fillable: hanya pemilik yang menautkan laporan ke paket, agar pelapor tidak bisa menyentuh paket orang lain.
 #[Fillable(['description'])]
@@ -35,6 +38,23 @@ class ParcelReport extends Model
         return [
             'resolved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return Attribute<ParcelReportStatus, never>
+     */
+    protected function status(): Attribute
+    {
+        return Attribute::get(fn (): ParcelReportStatus => $this->statusFromProgress());
+    }
+
+    private function statusFromProgress(): ParcelReportStatus
+    {
+        return match (true) {
+            $this->resolved_at !== null => ParcelReportStatus::Resolved,
+            $this->parcel_id !== null => ParcelReportStatus::Linked,
+            default => ParcelReportStatus::Open,
+        };
     }
 
     /**

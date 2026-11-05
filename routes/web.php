@@ -7,11 +7,15 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\ComplaintController as OwnerComplaintController;
 use App\Http\Controllers\Owner\OccupantAccountController;
+use App\Http\Controllers\Owner\ParcelController as OwnerParcelController;
+use App\Http\Controllers\Owner\ParcelReportController as OwnerParcelReportController;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\RoomController;
 use App\Http\Controllers\Owner\RoomPhotoController;
 use App\Http\Controllers\Owner\TenancyController;
 use App\Http\Controllers\Owner\TenancyOccupantController;
+use App\Http\Controllers\ParcelController;
+use App\Http\Controllers\ParcelReportController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\RentalInquiryController;
 use App\Http\Controllers\RoommateConsentController;
@@ -33,6 +37,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Pengumuman yang sedang tayang di kost penghuni. Pemilik diarahkan ke halaman kelolanya.
     Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+
+    // Paket pesanan milik penghuni yang login. Siapa yang boleh apa dicek oleh ParcelPolicy.
+    Route::resource('parcels', ParcelController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::put('parcels/{parcel}/collected', [ParcelController::class, 'markCollected'])->name('parcels.collected');
+    // Laporan paket orang lain yang salah diterima. Pelapor tidak memilih paket.
+    Route::post('parcel-reports', [ParcelReportController::class, 'store'])->name('parcel-reports.store');
 
     // Keluhan penghuni tentang kamarnya sendiri (kamar diambil dari sewa yang sedang ditempati).
     Route::resource('complaints', ComplaintController::class)->only(['index', 'store']);
@@ -58,6 +68,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('complaints', OwnerComplaintController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('announcements', OwnerAnnouncementController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::get('parcels', [OwnerParcelController::class, 'index'])->name('parcels.index');
+        Route::put('parcels/{parcel}/held', [OwnerParcelController::class, 'markHeld'])->name('parcels.held');
+        Route::put('parcel-reports/{parcelReport}/parcel', [OwnerParcelReportController::class, 'link'])->name('parcel-reports.link');
+        Route::put('parcel-reports/{parcelReport}/resolve', [OwnerParcelReportController::class, 'resolve'])->name('parcel-reports.resolve');
 
         Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])

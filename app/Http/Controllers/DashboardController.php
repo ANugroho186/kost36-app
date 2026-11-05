@@ -7,6 +7,7 @@ use App\Enums\PaymentProofStatus;
 use App\Enums\RentalInquiryStatus;
 use App\Models\Complaint;
 use App\Models\Parcel;
+use App\Models\ParcelReport;
 use App\Models\PaymentProof;
 use App\Models\RentalInquiry;
 use App\Models\Room;
@@ -45,6 +46,8 @@ class DashboardController extends Controller
                 'waiting' => Parcel::query()->whereNull('held_by_owner_at')->whereNull('collected_at')->count(),
                 'atOwner' => Parcel::query()->whereNotNull('held_by_owner_at')->whereNull('collected_at')->count(),
             ],
+            // Paket yang sampai ke penghuni yang salah dan belum selesai diurus.
+            'openParcelReports' => ParcelReport::query()->whereNull('resolved_at')->count(),
             'newRentalInquiries' => RentalInquiry::query()->where('status', RentalInquiryStatus::New)->count(),
         ]);
     }

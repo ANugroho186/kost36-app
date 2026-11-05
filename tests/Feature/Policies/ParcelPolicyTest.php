@@ -42,6 +42,13 @@ test('who may register and list parcels', function (string $actor, bool $canRegi
     'penghuni yang sudah keluar' => ['formerOccupant', false, false],
 ]);
 
+test('only the property owner sees the list of every parcel', function (string $actor, bool $allowed) {
+    expect(accessScenario()[$actor]->can('viewAll', Parcel::class))->toBe($allowed);
+})->with([
+    'pemilik kost' => ['owner', true],
+    'penghuni' => ['occupant', false],
+]);
+
 test('occupants of an inactive tenancy may still register parcels', function () {
     $tenancy = Tenancy::factory()->inactive()->create();
     $occupant = TenancyOccupant::factory()->for($tenancy)->create()->user;

@@ -221,6 +221,14 @@ flowchart TD
     H --> K
 ```
 
+Penghuni mengelola paketnya dari menu "Parcels":
+
+- Selama paket masih dalam perjalanan, penghuni bisa mengubah atau membatalkannya.
+- "I've got it" menandai paket yang diterima langsung dari kurir. "I've picked it up" menandai paket yang diambil dari pemilik kost.
+- Setelah diterima, paket tidak bisa diubah lagi.
+
+Pemilik kost melihat paket semua penghuni di menu "Parcels" miliknya: no. resi, nickname, kamar, perkiraan tiba, dan status. Paket yang belum diterima ada di atas, urut dari perkiraan tiba paling dekat. Tombol "It's at my place" mengisi `held_by_owner_at`, dan hanya tersedia selama paket masih dalam perjalanan. Paket yang diterima langsung oleh penghuni diberi label "Received by tenant".
+
 Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya melihat no. resi, nickname, kamar, perkiraan tiba, dan status. Penghuni lain, termasuk teman sekamar, tidak melihat apa pun.
 
 ### Paket salah terima
@@ -231,6 +239,17 @@ Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya m
 4. Saat laporan ditautkan, penghuni pemilik paket menerima notifikasi bahwa paketnya salah diterima dan sedang diurus pemilik. Identitas pelapor tidak disebutkan.
 5. Paket diserahkan ke pemilik, lalu pemilik mencentang "sudah di rumah" dan alur normal berlanjut. Laporan ditandai selesai (`resolved_at`).
 6. Kalau resinya tidak terdaftar oleh siapa pun, pemilik mengurusnya di luar sistem lalu menandai laporan selesai.
+
+Cara kerjanya di aplikasi:
+
+- **Penghuni yang salah menerima** melapor dari menu "Parcels" ("I received someone else's parcel"). Isinya hanya keterangan bebas. `parcel_id` dan `resolved_at` tidak bisa diisi dari form.
+- **Status laporan bagi pelapor:** "Sent to the owner", "Being handled", atau "Resolved". Paket yang ditautkan dan pemiliknya tidak pernah ditampilkan kepadanya.
+- **Penghuni pemilik paket** melihat tanda "Someone else received this parcel by mistake" pada paketnya, selama laporan yang ditautkan belum selesai. Nama pelapor dan isi laporannya tidak dikirim kepadanya.
+- **Pemilik kost** melihat laporan di menu "Parcels" miliknya, termasuk siapa yang memegang paket dan kamarnya, supaya bisa mengambilnya.
+    - Laporan ditautkan hanya ke paket yang belum diterima.
+    - Aplikasi menyarankan paket yang no. resinya tertulis di keterangan laporan. Keterangan dirapikan seperti resi, resi terpanjang didahulukan, dan paket milik pelapor sendiri tidak disarankan.
+    - Laporan yang sudah selesai tidak bisa ditautkan atau diselesaikan lagi.
+- **Notifikasi** di langkah 2 dan 4 dikirim mulai Fase 3. Sampai saat itu, dashboard pemilik menampilkan jumlah laporan yang belum selesai, dan pemilik paket melihat tandanya di halaman paket.
 
 ## Alur permintaan survei (publik)
 

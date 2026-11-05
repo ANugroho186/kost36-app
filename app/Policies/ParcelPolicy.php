@@ -16,6 +16,15 @@ class ParcelPolicy
         return $user->isOwner() || $user->currentTenancy() !== null;
     }
 
+    /**
+     * Halaman pemilik kost: paket semua penghuni, tanpa nama barang. Penghuni memakai viewAny
+     * untuk halamannya sendiri, yang hanya berisi paket miliknya.
+     */
+    public function viewAll(User $user): bool
+    {
+        return $user->isOwner();
+    }
+
     public function view(User $user, Parcel $parcel): bool
     {
         return $user->isOwner() || $this->ownsParcel($user, $parcel);
