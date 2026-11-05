@@ -17,8 +17,13 @@ use Inertia\Response;
  */
 class ParcelController extends Controller
 {
-    public function index(#[CurrentUser] User $user): Response
+    public function index(#[CurrentUser] User $user): Response|RedirectResponse
     {
+        // Pemilik kost melihat paket semua penghuni (tanpa nama barang) di halamannya sendiri.
+        if ($user->isOwner()) {
+            return to_route('owner.parcels.index');
+        }
+
         return Inertia::render('tenant/parcels/index', [
             'parcels' => $user->parcels()
                 // Yang belum diterima di atas, lalu terbaru lebih dulu.

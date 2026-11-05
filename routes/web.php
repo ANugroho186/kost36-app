@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\ComplaintController as OwnerComplaintController;
 use App\Http\Controllers\Owner\OccupantAccountController;
+use App\Http\Controllers\Owner\ParcelController as OwnerParcelController;
 use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\RoomController;
 use App\Http\Controllers\Owner\RoomPhotoController;
@@ -63,6 +64,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('complaints', OwnerComplaintController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('announcements', OwnerAnnouncementController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::get('parcels', [OwnerParcelController::class, 'index'])->name('parcels.index');
+        Route::put('parcels/{parcel}/held', [OwnerParcelController::class, 'markHeld'])->name('parcels.held');
 
         Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])

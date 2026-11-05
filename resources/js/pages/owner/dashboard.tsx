@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index as complaints } from '@/routes/owner/complaints';
+import { index as parcelsIndex } from '@/routes/owner/parcels';
 import type { RouteDefinition } from '@/wayfinder';
 
 // Sama persis dengan yang dikirim DashboardController::owner(): hanya angka.
@@ -89,6 +90,7 @@ export default function OwnerDashboard({
                     title="Parcels at your place"
                     value={parcels.atOwner}
                     description={`${parcels.waiting} more on the way`}
+                    href={parcelsIndex()}
                 />
                 <StatCard
                     icon={Inbox}

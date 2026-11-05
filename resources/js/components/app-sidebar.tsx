@@ -25,6 +25,7 @@ import { index as announcements } from '@/routes/announcements';
 import { index as complaints } from '@/routes/complaints';
 import { index as ownerAnnouncements } from '@/routes/owner/announcements';
 import { index as ownerComplaints } from '@/routes/owner/complaints';
+import { index as ownerParcels } from '@/routes/owner/parcels';
 import { edit as editProperty } from '@/routes/owner/property';
 import { index as rooms } from '@/routes/owner/rooms';
 import { index as tenancies } from '@/routes/owner/tenancies';
@@ -63,6 +64,11 @@ const ownerNavItems: NavItem[] = [
         title: 'Announcements',
         href: ownerAnnouncements(),
         icon: Megaphone,
+    },
+    {
+        title: 'Parcels',
+        href: ownerParcels(),
+        icon: Package,
     },
 ];
 

@@ -111,13 +111,23 @@ test('only people living in a room can register parcels', function (string $acto
     // Data kosong tetap 403, bukan error validasi: hak akses dicek lebih dulu.
     $this->actingAs($scenario[$actor])->post(route('parcels.store'), [])->assertForbidden();
 
-    $this->actingAs($scenario[$actor])
-        ->get(route('parcels.index'))
-        ->assertInertia(fn (Assert $page) => $page->where('canRegister', false));
+    expect(Parcel::query()->count())->toBe(0);
 })->with([
     'pemilik kost' => ['owner'],
     'penghuni yang sudah keluar' => ['formerOccupant'],
 ]);
+
+test('people who moved out are not offered the register form', function () {
+    $this->actingAs(accessScenario()['formerOccupant'])
+        ->get(route('parcels.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('canRegister', false));
+});
+
+test('the owner is sent to the owner parcel page', function () {
+    $this->actingAs(accessScenario()['owner'])
+        ->get(route('parcels.index'))
+        ->assertRedirect(route('owner.parcels.index'));
+});
 
 test('a tenant edits a parcel while it is on the way and may keep its number', function () {
     $scenario = accessScenario();

@@ -227,6 +227,8 @@ Penghuni mengelola paketnya dari menu "Parcels":
 - "I've got it" menandai paket yang diterima langsung dari kurir. "I've picked it up" menandai paket yang diambil dari pemilik kost.
 - Setelah diterima, paket tidak bisa diubah lagi.
 
+Pemilik kost melihat paket semua penghuni di menu "Parcels" miliknya: no. resi, nickname, kamar, perkiraan tiba, dan status. Paket yang belum diterima ada di atas, urut dari perkiraan tiba paling dekat. Tombol "It's at my place" mengisi `held_by_owner_at`, dan hanya tersedia selama paket masih dalam perjalanan. Paket yang diterima langsung oleh penghuni diberi label "Received by tenant".
+
 Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya melihat no. resi, nickname, kamar, perkiraan tiba, dan status. Penghuni lain, termasuk teman sekamar, tidak melihat apa pun.
 
 ### Paket salah terima
