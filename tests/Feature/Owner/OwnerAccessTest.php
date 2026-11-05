@@ -4,6 +4,7 @@ use App\Enums\ComplaintStatus;
 use App\Models\Announcement;
 use App\Models\Complaint;
 use App\Models\Parcel;
+use App\Models\ParcelReport;
 use App\Models\Room;
 use App\Models\RoomPhoto;
 use App\Models\TenancyOccupant;
@@ -21,6 +22,8 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     $complaint = Complaint::factory()->for($occupancy->tenancy->room)->for($tenant, 'reporter')->create();
     $announcement = Announcement::factory()->for($occupancy->tenancy->room->property)->create(['title' => 'Kerja bakti']);
     $parcel = Parcel::factory()->for($tenant)->create();
+    // Laporan yang ia buat sendiri: menautkan atau menyelesaikannya tetap hak pemilik kost.
+    $report = ParcelReport::factory()->for($tenant, 'reporter')->create();
 
     $url = match ($params) {
         'none' => route($routeName),
@@ -31,6 +34,7 @@ test('tenants cannot open or change owner pages', function (string $method, stri
         'complaint' => route($routeName, $complaint),
         'announcement' => route($routeName, $announcement),
         'parcel' => route($routeName, $parcel),
+        'report' => route($routeName, $report),
     };
 
     $this->actingAs($tenant)->{$method}($url)->assertForbidden();
@@ -39,7 +43,9 @@ test('tenants cannot open or change owner pages', function (string $method, stri
         ->and(RoomPhoto::find($photo->id))->not->toBeNull()
         ->and($complaint->fresh()?->status)->toBe(ComplaintStatus::Reported)
         ->and($announcement->fresh()?->title)->toBe('Kerja bakti')
-        ->and($parcel->fresh()?->held_by_owner_at)->toBeNull();
+        ->and($parcel->fresh()?->held_by_owner_at)->toBeNull()
+        ->and($report->fresh()?->parcel_id)->toBeNull()
+        ->and($report->fresh()?->resolved_at)->toBeNull();
 })->with([
     'buka profil kost' => ['get', 'owner.property.edit', 'none'],
     'simpan profil kost' => ['put', 'owner.property.update', 'none'],
@@ -60,6 +66,8 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     'hapus pengumuman kost sendiri' => ['delete', 'owner.announcements.destroy', 'announcement'],
     'daftar paket semua penghuni' => ['get', 'owner.parcels.index', 'none'],
     'tandai paket sendiri di rumah pemilik' => ['put', 'owner.parcels.held', 'parcel'],
+    'tautkan laporan sendiri ke paket' => ['put', 'owner.parcel-reports.link', 'report'],
+    'selesaikan laporan sendiri' => ['put', 'owner.parcel-reports.resolve', 'report'],
     'daftar sewa' => ['get', 'owner.tenancies.index', 'none'],
     'simpan sewa baru' => ['post', 'owner.tenancies.store', 'none'],
     'detail sewa sendiri versi pemilik' => ['get', 'owner.tenancies.show', 'tenancy'],

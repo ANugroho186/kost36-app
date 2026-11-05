@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ParcelRequest;
 use App\Models\Parcel;
+use App\Models\ParcelReport;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -26,6 +28,8 @@ class ParcelController extends Controller
 
         return Inertia::render('tenant/parcels/index', [
             'parcels' => $user->parcels()
+                // Hanya untuk tanda "salah diterima orang lain". Isi laporannya tidak dikirim.
+                ->with(['reports' => fn (HasMany $query) => $query->select(['id', 'parcel_id'])->whereNull('resolved_at')])
                 // Yang belum diterima di atas, lalu terbaru lebih dulu.
                 ->orderByRaw('collected_at IS NOT NULL')
                 ->latest()
@@ -39,10 +43,27 @@ class ParcelController extends Controller
                     'itemName' => Gate::allows('viewItemName', $parcel) ? $parcel->item_name : null,
                     'expectedDate' => $parcel->expected_date?->toDateString(),
                     'status' => $parcel->status->value,
+                    // Paket ini sampai ke penghuni lain dan sedang diurus pemilik kost. Siapa
+                    // pelapornya sengaja tidak disebut.
+                    'misdelivered' => $parcel->reports->isNotEmpty(),
                 ])
                 ->all(),
             // Hanya penghuni yang sedang tinggal. Pemilik kost tidak mendaftarkan paket.
             'canRegister' => Gate::allows('create', Parcel::class),
+            // Laporan salah terima yang dibuat penghuni ini. Hanya statusnya: paket yang ditautkan
+            // pemilik kost (dan siapa pemiliknya) tidak ditampilkan kepada pelapor.
+            'reports' => $user->parcelReports()
+                ->latest()
+                ->latest('id')
+                ->get()
+                ->map(fn (ParcelReport $report): array => [
+                    'id' => $report->id,
+                    'description' => $report->description,
+                    'reportedAt' => $report->created_at?->toDateString(),
+                    'status' => $report->status->value,
+                ])
+                ->all(),
+            'canReport' => Gate::allows('create', ParcelReport::class),
         ]);
     }
 

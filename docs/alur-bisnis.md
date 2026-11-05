@@ -240,6 +240,17 @@ Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya m
 5. Paket diserahkan ke pemilik, lalu pemilik mencentang "sudah di rumah" dan alur normal berlanjut. Laporan ditandai selesai (`resolved_at`).
 6. Kalau resinya tidak terdaftar oleh siapa pun, pemilik mengurusnya di luar sistem lalu menandai laporan selesai.
 
+Cara kerjanya di aplikasi:
+
+- **Penghuni yang salah menerima** melapor dari menu "Parcels" ("I received someone else's parcel"). Isinya hanya keterangan bebas. `parcel_id` dan `resolved_at` tidak bisa diisi dari form.
+- **Status laporan bagi pelapor:** "Sent to the owner", "Being handled", atau "Resolved". Paket yang ditautkan dan pemiliknya tidak pernah ditampilkan kepadanya.
+- **Penghuni pemilik paket** melihat tanda "Someone else received this parcel by mistake" pada paketnya, selama laporan yang ditautkan belum selesai. Nama pelapor dan isi laporannya tidak dikirim kepadanya.
+- **Pemilik kost** melihat laporan di menu "Parcels" miliknya, termasuk siapa yang memegang paket dan kamarnya, supaya bisa mengambilnya.
+    - Laporan ditautkan hanya ke paket yang belum diterima.
+    - Aplikasi menyarankan paket yang no. resinya tertulis di keterangan laporan. Keterangan dirapikan seperti resi, resi terpanjang didahulukan, dan paket milik pelapor sendiri tidak disarankan.
+    - Laporan yang sudah selesai tidak bisa ditautkan atau diselesaikan lagi.
+- **Notifikasi** di langkah 2 dan 4 dikirim mulai Fase 3. Sampai saat itu, dashboard pemilik menampilkan jumlah laporan yang belum selesai, dan pemilik paket melihat tandanya di halaman paket.
+
 ## Alur permintaan survei (publik)
 
 1. Calon penyewa mengisi form di halaman publik: nama dan kontak (nomor WhatsApp atau email) wajib, sedangkan tanggal survei (tidak boleh tanggal lampau) dan pesan opsional. Form menampilkan catatan bahwa data hanya dipakai untuk mengatur survei dan dihapus 30 hari setelah selesai.

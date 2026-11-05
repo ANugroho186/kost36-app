@@ -38,7 +38,8 @@ test('the parcel list only sends what the page needs', function () {
                 ->where('trackingNumber', 'JNE123')
                 ->where('itemName', 'Charger HP')
                 ->where('expectedDate', '2026-11-10')
-                ->where('status', 'waiting'),
+                ->where('status', 'waiting')
+                ->where('misdelivered', false),
             ),
         );
 });
