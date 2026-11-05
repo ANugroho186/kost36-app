@@ -5,6 +5,7 @@ import {
     KeyRound,
     LayoutGrid,
     Megaphone,
+    Package,
     Wrench,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -27,6 +28,7 @@ import { index as ownerComplaints } from '@/routes/owner/complaints';
 import { edit as editProperty } from '@/routes/owner/property';
 import { index as rooms } from '@/routes/owner/rooms';
 import { index as tenancies } from '@/routes/owner/tenancies';
+import { index as parcels } from '@/routes/parcels';
 import type { NavItem } from '@/types';
 
 const dashboardItem: NavItem = {
@@ -74,6 +76,11 @@ const tenantNavItems: NavItem[] = [
         title: 'Complaints',
         href: complaints(),
         icon: Wrench,
+    },
+    {
+        title: 'Parcels',
+        href: parcels(),
+        icon: Package,
     },
 ];
 

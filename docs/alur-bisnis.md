@@ -221,6 +221,12 @@ flowchart TD
     H --> K
 ```
 
+Penghuni mengelola paketnya dari menu "Parcels":
+
+- Selama paket masih dalam perjalanan, penghuni bisa mengubah atau membatalkannya.
+- "I've got it" menandai paket yang diterima langsung dari kurir. "I've picked it up" menandai paket yang diambil dari pemilik kost.
+- Setelah diterima, paket tidak bisa diubah lagi.
+
 Nama/isi barang hanya terlihat oleh penghuni pemilik paket. Pemilik kost hanya melihat no. resi, nickname, kamar, perkiraan tiba, dan status. Penghuni lain, termasuk teman sekamar, tidak melihat apa pun.
 
 ### Paket salah terima

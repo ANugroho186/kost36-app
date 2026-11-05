@@ -12,6 +12,7 @@ use App\Http\Controllers\Owner\RoomController;
 use App\Http\Controllers\Owner\RoomPhotoController;
 use App\Http\Controllers\Owner\TenancyController;
 use App\Http\Controllers\Owner\TenancyOccupantController;
+use App\Http\Controllers\ParcelController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\RentalInquiryController;
 use App\Http\Controllers\RoommateConsentController;
@@ -33,6 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Pengumuman yang sedang tayang di kost penghuni. Pemilik diarahkan ke halaman kelolanya.
     Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+
+    // Paket pesanan milik penghuni yang login. Siapa yang boleh apa dicek oleh ParcelPolicy.
+    Route::resource('parcels', ParcelController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::put('parcels/{parcel}/collected', [ParcelController::class, 'markCollected'])->name('parcels.collected');
 
     // Keluhan penghuni tentang kamarnya sendiri (kamar diambil dari sewa yang sedang ditempati).
     Route::resource('complaints', ComplaintController::class)->only(['index', 'store']);
