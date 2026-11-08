@@ -20,6 +20,10 @@ return new class extends Migration
             $table->string('password');
             // true selama penghuni masih memakai password sementara dari pemilik.
             $table->boolean('has_temporary_password')->default(false);
+            // Saluran notifikasi selain portal: kosong (portal saja), email (memakai kolom email), atau telegram.
+            $table->string('notify_channel')->nullable();
+            // Diisi otomatis saat pengguna menekan Start di bot Telegram. Tidak pernah dikirim ke browser.
+            $table->string('telegram_chat_id')->nullable();
             $table->string('role')->default('tenant');
             $table->rememberToken();
             $table->timestamps();

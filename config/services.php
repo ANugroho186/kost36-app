@@ -28,6 +28,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'telegram' => [
+        // Token dari @BotFather. Rahasia seperti password: hanya di .env, tidak pernah di repo.
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        // Username bot tanpa @, untuk tautan https://t.me/<username>?start=<kode>.
+        'bot_username' => env('TELEGRAM_BOT_USERNAME'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

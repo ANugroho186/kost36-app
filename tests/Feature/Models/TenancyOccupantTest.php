@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\NotifyChannel;
 use App\Models\Tenancy;
 use App\Models\TenancyOccupant;
 use App\Models\User;
@@ -59,14 +58,4 @@ test('deleting a tenancy deletes its occupants', function () {
     $tenancy->delete();
 
     expect(TenancyOccupant::count())->toBe(0);
-});
-
-test('notification contact is hidden when serialized', function () {
-    $occupant = TenancyOccupant::factory()->create([
-        'notify_channel' => NotifyChannel::Telegram,
-        'notify_contact' => '123456789',
-    ]);
-
-    expect($occupant->toArray())->not->toHaveKey('notify_contact')
-        ->and($occupant->notify_channel)->toBe(NotifyChannel::Telegram);
 });

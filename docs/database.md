@@ -40,6 +40,8 @@ erDiagram
         string password "hash"
         boolean has_temporary_password "default false"
         string role "owner atau tenant, default tenant"
+        string notify_channel "nullable: telegram, email"
+        string telegram_chat_id "nullable, tersembunyi"
     }
     PROPERTIES {
         bigint id PK
@@ -82,8 +84,6 @@ erDiagram
         string nickname "nullable"
         date moved_in_at
         date moved_out_at "nullable"
-        string notify_channel "nullable: telegram, email"
-        string notify_contact "nullable"
     }
     PAYMENT_PROOFS {
         bigint id PK
@@ -191,7 +191,8 @@ Hanya ini:
 - `moved_in_at` dan `moved_out_at`, tanggal masuk dan keluar tiap penghuni.
 - `start_date` dan `paid_until` milik sewa kamar (bukan per orang), untuk pengingat.
 - Akun login (opsional): `username`, `password`, dan `email` (opsional).
-- Satu kontak notifikasi per penghuni (opsional): `notify_channel` + `notify_contact`. Untuk Telegram, isinya `chat_id` yang didapat otomatis saat penghuni membuka link bot dan menekan Start.
+- Saluran notifikasi di akun (opsional): `users.notify_channel`. Email memakai `users.email` yang sudah ada, jadi tidak ada salinan kontak. Untuk Telegram, `users.telegram_chat_id` didapat otomatis saat penghuni membuka link bot dan menekan Start. Kolom ini tidak pernah dikirim ke browser.
+- Penghuni tanpa akun tidak punya saluran notifikasi. Kalau ia ingin diingatkan, pemilik membuatkan akun untuknya (password sementara).
 - Paket pesanan (opsional, diisi penghuni sendiri): no. resi, nama/isi barang (terenkripsi), dan perkiraan tanggal tiba. Dihapus otomatis 30 hari setelah diambil.
 
 **Tidak disimpan:** NIK, foto KTP, alamat asal, tanggal lahir, tempat kerja/kampus, kontak darurat. Data ini dicek atau dicatat offline oleh pemilik.
@@ -317,7 +318,7 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 1. `moved_out_at` diisi.
 2. File bukti transfer yang diunggahnya dihapus (`file_path = NULL`, `file_deleted_at` diisi). Langkah ini dilakukan **sebelum** akun dihapus, karena setelah itu `uploaded_by` menjadi `NULL` dan file tidak bisa dilacak lagi ke pengunggahnya.
 3. Akun `users` penghuni itu dihapus. FK yang menunjuk ke akun itu otomatis menjadi `NULL` (`nullOnDelete`), dan data paket pesanannya ikut terhapus (`cascadeOnDelete`).
-4. `nickname` dan `notify_contact` di baris penghuninya dikosongkan.
+4. `nickname` di baris penghuninya dikosongkan. Saluran notifikasi dan chat Telegram tersimpan di akun, jadi sudah ikut terhapus di langkah 3.
 5. Sewa kamar dan `paid_until` tetap berjalan. Perubahan harga karena penghuni berkurang dicatat pemilik di luar sistem.
 
 **Semua penghuni keluar** (status `ended`), setelah pemilik mengonfirmasi kamar sudah kosong:

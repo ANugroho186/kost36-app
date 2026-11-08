@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\NotifyChannel;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -50,3 +51,16 @@ test('usernames that differ only in case are duplicates', function () {
 
     User::factory()->create(['username' => 'Budi']);
 })->throws(UniqueConstraintViolationException::class);
+
+test('notification settings cannot be mass assigned and the telegram chat stays hidden', function () {
+    $user = User::factory()->create([
+        'notify_channel' => NotifyChannel::Email,
+        'telegram_chat_id' => '123456789',
+    ]);
+    $user->update(['notify_channel' => NotifyChannel::Telegram->value, 'telegram_chat_id' => '999']);
+
+    // Factory boleh mengisi semua kolom; update() dari input biasa tidak.
+    expect($user->fresh()->notify_channel)->toBe(NotifyChannel::Email)
+        ->and($user->fresh()->telegram_chat_id)->toBe('123456789')
+        ->and($user->toArray())->not->toHaveKey('telegram_chat_id');
+});

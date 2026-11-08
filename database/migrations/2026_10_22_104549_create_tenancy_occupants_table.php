@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('nickname')->nullable();
             $table->date('moved_in_at');
             $table->date('moved_out_at')->nullable();
-            $table->string('notify_channel')->nullable();
-            $table->string('notify_contact')->nullable();
+            // Saluran notifikasi disimpan di akun (users), bukan di sini: penghuni tanpa akun tidak
+            // menerima notifikasi, dan kontaknya ikut terhapus saat akun dihapus.
             $table->timestamps();
         });
 

@@ -40,7 +40,15 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoComplete="username"
                                     autoCapitalize="none"
                                     placeholder="username"
+                                    aria-describedby="username-hint"
                                 />
+                                {/* Email hanya untuk reset password dan notifikasi, jadi mudah tertukar. */}
+                                <p
+                                    id="username-hint"
+                                    className="text-sm text-muted-foreground"
+                                >
+                                    Use your username, not your email address.
+                                </p>
                                 <InputError message={errors.username} />
                             </div>
 

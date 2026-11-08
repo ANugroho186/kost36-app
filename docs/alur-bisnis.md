@@ -20,14 +20,14 @@ Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu s
 
 Orang kedua hanya bisa masuk kalau kamar berstatus **"bersedia berbagi kamar"**, dan biasanya ia kenalan penghuni pertama, misalnya teman sekantor atau sekampus. Status ini dinyalakan oleh penghuni kamar itu atau oleh pemilik. Tanpa status itu, kamar dianggap penuh walaupun baru berisi 1 orang. Aturan lengkapnya ada di `docs/database.md`, bagian "Penghuni per kamar".
 
-| Data                                               | Terlihat oleh teman sekamar?                                                                                                       |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Nickname                                           | Ya                                                                                                                                 |
-| Tanggal `paid_until` dan status sewa               | Ya                                                                                                                                 |
-| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama. Hanya keluhan selama sewa yang sedang berjalan, bukan keluhan penghuni lama kamar itu |
-| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                                                                                                 |
-| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
-| Kontak notifikasi (`notify_contact`)               | Tidak                                                                                                                              |
+| Data                                                 | Terlihat oleh teman sekamar?                                                                                                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Nickname                                             | Ya                                                                                                                                 |
+| Tanggal `paid_until` dan status sewa                 | Ya                                                                                                                                 |
+| Keluhan kamar beserta fotonya                        | Ya, karena keluhan menyangkut kamar bersama. Hanya keluhan selama sewa yang sedang berjalan, bukan keluhan penghuni lama kamar itu |
+| Status bukti transfer (menunggu/disetujui/ditolak)   | Ya                                                                                                                                 |
+| Gambar bukti transfer                                | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
+| Saluran dan kontak notifikasi (email, chat Telegram) | Tidak                                                                                                                              |
 
 ### Matriks hak akses
 
@@ -68,6 +68,11 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 3. Password sementara **ditampilkan sekali** kepada pemilik (flash), lalu diserahkan langsung atau lewat pesan pribadi. Server hanya menyimpan hash-nya.
 4. Selama masih memakai password sementara (`users.has_temporary_password`), dashboard penghuni menampilkan **pengingat** untuk menggantinya. Ini tidak wajib. Pengingat hilang begitu penghuni mengganti password di Settings atau lewat link reset email.
 5. **Reset oleh pemilik** (terutama untuk akun tanpa email) membuat password sementara baru dengan format yang sama, meminta password pemilik sebagai konfirmasi, dan mengeluarkan penghuni dari semua perangkat (sesi dihapus, `remember_token` diganti). Akun pemilik tidak bisa direset lewat jalur ini.
+6. **Lupa password lewat email** (untuk akun yang punya email) dijaga supaya tidak membocorkan email mana yang terdaftar:
+    - Jawabannya selalu kalimat yang sama, baik email terdaftar, tidak terdaftar, maupun baru saja meminta.
+    - Semua jawaban dibuat **sama lamanya**, yaitu sekitar 1 detik (`auth.timebox_duration`). Untuk email terdaftar, Laravel menyimpan token dengan bcrypt (sekitar 320 ms), jadi tanpa penyamaan waktu, email terdaftar dijawab lebih lambat. Login yang gagal ikut ditahan sampai batas yang sama, sedangkan login yang berhasil tidak menunggu.
+    - Email reset dikirim lewat antrean, supaya lamanya tidak bergantung pada server email. Isi job-nya **dienkripsi**, karena berisi token reset asli yang bisa dipakai siapa pun yang membaca tabel `jobs` atau `failed_jobs`.
+    - Login memakai **username**, bukan email. Karena penghuni baru saja memakai email untuk reset, keduanya mudah tertukar. Email reset menyebut username akunnya, halaman login memberi keterangan di bawah kolom username, dan pesan setelah reset berhasil juga mengingatkannya (`lang/en/passwords.php`).
 
 ## Jadwal notifikasi
 
@@ -90,7 +95,7 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 | Permintaan survei baru          | Pemilik                              | Ada permintaan baru (tanpa nama dan kontak)         |
 | Pengumuman mulai tayang         | Penghuni kost itu                    | Judul pengumuman                                    |
 
-Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar. Pemilik juga memilih salurannya sendiri.
+Saluran: notifikasi di portal (selalu), ditambah Telegram atau email kalau pengguna itu memilihnya di Settings → Notifications. Pengaturan ini per akun, bukan per kamar, dan berlaku sama untuk pemilik maupun penghuni. Email hanya bisa dipilih kalau akunnya punya alamat email, dan Telegram kalau sudah tersambung ke bot. Kalau emailnya dihapus dari profil, pilihannya kembali ke portal saja.
 
 Aturan notifikasi:
 
@@ -99,6 +104,26 @@ Aturan notifikasi:
 - Notifikasi keluhan selesai hanya dikirim ke penghuni kamar itu yang boleh melihat keluhannya (lewat `ComplaintPolicy::view`), dan hanya saat statusnya baru berubah menjadi selesai. Keluhan yang dicatat pemilik sendiri tidak memberi tahu pemilik. Menautkan laporan ke paket yang sama untuk kedua kalinya tidak mengirim notifikasi lagi.
 - Notifikasi dikirim lewat queue, jadi request pengguna tidak menunggu pengiriman. Di lokal, notifikasi baru sampai kalau _queue worker_ berjalan (`./vendor/bin/sail artisan queue:work`).
 - Menu "Notifications" menampilkan 50 notifikasi terbaru milik pengguna itu sendiri. Membuka notifikasi sekaligus menandainya sudah dibaca. Tautannya hanya boleh berupa path di aplikasi ini, tidak pernah ke situs lain.
+
+### Menyambungkan Telegram
+
+1. Di Settings → Notifications, pengguna menekan "Connect Telegram". Aplikasi membuat kode acak **sekali pakai** yang berlaku **15 menit**, lalu membuka `https://t.me/<bot>?start=<kode>`.
+2. Pengguna menekan _Start_ di chat bot. Telegram mengirim `/start <kode>` ke bot.
+3. Command `telegram:poll` (setiap menit, _long polling_, tanpa webhook supaya jalan di lokal) mencocokkan kode itu, lalu menyimpan `chat_id` ke akun dan memilih Telegram sebagai saluran. Bot membalas bahwa akun sudah tersambung.
+4. Aturan keamanan:
+    - Hanya chat **pribadi** yang dilayani. Chat grup diabaikan, supaya notifikasi tidak pernah masuk ke grup.
+    - Kode yang sudah dipakai, kedaluwarsa, atau tidak dikenal tidak menyambungkan siapa pun. Bot menyarankan membuat tautan baru.
+    - Kode disimpan di cache dalam bentuk hash.
+    - Token bot hanya ada di `.env`. Pesan error koneksi ke Telegram disaring, supaya URL yang memuat token tidak masuk log.
+5. "Disconnect" menghapus `chat_id`. Kalau salurannya Telegram, pilihannya kembali ke portal saja.
+6. Kalau bot belum diatur di `.env` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`), pilihan Telegram tidak ditampilkan dan `telegram:poll` tidak menghubungi Telegram.
+
+### Pengiriman lewat email dan Telegram
+
+- **Isi pesan.** Kalimat yang sama dengan notifikasi portal, ditambah tautan ke halaman terkait di aplikasi. Pesan Telegram berupa teks biasa tanpa format dan tanpa pratinjau tautan, jadi isi seperti judul keluhan tidak bisa mengubah tampilannya.
+- **Satu job per saluran.** Portal, email, dan Telegram masing-masing menjadi job sendiri di antrean. Gangguan sementara dicoba ulang sampai 3 kali (jeda 10 dan 60 detik) sebelum masuk `failed_jobs`.
+- **Bot diblokir.** Kalau penghuni memblokir bot, Telegram menjawab 403. Sambungannya otomatis diputus dan pilihannya kembali ke portal saja, tanpa dicoba ulang.
+- **Diputus sebelum terkirim.** Job memuat ulang akun saat dijalankan, jadi pesan tidak dikirim kalau Telegram sudah diputus sebelum job diproses.
 
 ## Alur keluhan
 

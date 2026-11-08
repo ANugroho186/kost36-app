@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\NotifyChannel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -32,6 +33,11 @@ class ProfileController extends Controller
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
+        }
+
+        // Tanpa email, notifikasi email tidak bisa dikirim: pilihannya kembali ke portal saja.
+        if ($request->user()->email === null && $request->user()->notify_channel === NotifyChannel::Email) {
+            $request->user()->notify_channel = null;
         }
 
         $request->user()->save();
