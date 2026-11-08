@@ -273,6 +273,13 @@ Zona waktu aplikasi (`config/app.php`) memang `Asia/Jakarta`, jadi "hari ini" se
 
 `reminder_logs` punya unique key `(tenancy_id, due_date, type)`. Scheduler yang berjalan dua kali tidak mengirim pengingat ganda. Satu pengingat dikirim ke semua penghuni aktif kamar itu, dan dicatat satu kali per sewa.
 
+- `type` memakai enum `App\Enums\ReminderType`:
+    - `due_in_3_days`, `due_today`, `grace_day_1`, `grace_day_4`, `grace_day_7`, dan `decision_needed`. Acuannya `paid_until`.
+    - `extension_last_day` dan `extension_ended`. Acuannya `extended_until`.
+    - `vacate_day`. Acuannya `vacate_by`.
+- `due_date` adalah tanggal acuan itu, bukan tanggal kirim. Waktu kirim dicatat di `sent_at`.
+- Baris log dan job notifikasinya ditulis dalam satu transaksi (lihat "Alur pengingat harian" di `docs/alur-bisnis.md").
+
 ### Paket pesanan
 
 Penghuni mendaftarkan paket yang sedang dikirim ke alamat kost. Pemilik kost menerima notifikasi dan bisa menerima paket itu kalau penghuninya sedang tidak ada.

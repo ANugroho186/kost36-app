@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\PaymentProofStatus;
+use App\Enums\ReminderType;
 use App\Enums\RentalInquiryStatus;
 use App\Enums\TenancyDecisionType;
 use App\Models\Announcement;
@@ -134,11 +135,12 @@ class DemoSeeder extends Seeder
             'file_path' => 'payment-proofs/demo-kamar-2.jpg',
         ]);
 
-        foreach (['H-3' => -3, 'H-0' => 0, 'H+1' => 1] as $type => $offset) {
+        // Pengingat yang sudah terkirim sampai hari ini (H+3): H-3, H-0, dan H+1.
+        foreach ([ReminderType::DueIn3Days, ReminderType::DueToday, ReminderType::GraceDay1] as $type) {
             ReminderLog::factory()->for($tenancy)->create([
                 'due_date' => $paidUntil,
                 'type' => $type,
-                'sent_at' => $paidUntil->addDays($offset)->setTime(8, 0),
+                'sent_at' => $paidUntil->addDays($type->daysFromDueDate() ?? 0)->setTime(8, 0),
             ]);
         }
 

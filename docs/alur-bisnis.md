@@ -76,7 +76,8 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 | H-3 dan H-0                     | Semua penghuni aktif                 | Pengingat jatuh tempo (tanggal saja, tanpa nominal) |
 | H+1, H+4, H+7                   | Semua penghuni aktif                 | Pengingat masa tenggang                             |
 | H+10                            | Pemilik                              | Minta keputusan: perpanjang N hari atau nonaktifkan |
-| `extended_until` terlewat       | Pemilik                              | Minta keputusan lagi                                |
+| Hari `extended_until`           | Semua penghuni aktif                 | Batas perpanjangan hari ini                         |
+| Sehari setelah `extended_until` | Pemilik                              | Minta keputusan lagi                                |
 | Hari `vacate_by`                | Pemilik                              | Konfirmasi kamar sudah kosong                       |
 | Bukti diunggah                  | Pemilik                              | Ada bukti menunggu verifikasi                       |
 | Bukti disetujui                 | Semua penghuni aktif                 | Sewa diperpanjang sampai `paid_until` baru          |
@@ -143,18 +144,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A([Scheduler harian]) --> B[Ambil sewa berstatus active]
-    B --> C["Hitung selisih hari terhadap batas berlaku: extended_until atau paid_until"]
-    C --> D{"Hari ini jadwal notifikasi?"}
-    D -- Tidak --> H
-    D -- Ya --> E{"Sudah ada di reminder_logs?"}
-    E -- Ya --> H
-    E -- Belum --> F["Kirim notifikasi ke semua penghuni aktif lewat queue: portal, Telegram atau email"]
-    F --> G[Catat ke reminder_logs]
-    G --> H{"Masih ada sewa lain?"}
+    A(["Scheduler harian: reminders:send"]) --> B["Ambil sewa yang menempati kamar: active atau inactive"]
+    B --> C{"Pengingat yang jatuh hari ini? (ReminderSchedule)"}
+    C -- Tidak ada --> H
+    C -- Ada --> D["Satu transaksi: catat di reminder_logs + masukkan notifikasi ke antrean"]
+    D --> E{"Unique (tenancy_id, due_date, type) bentrok?"}
+    E -- Ya, sudah pernah --> F[Batalkan, lewati]
+    E -- Tidak --> G[Simpan keduanya]
+    F --> H{"Masih ada sewa lain?"}
+    G --> H
     H -- Ya --> C
     H -- Tidak --> I([Selesai])
 ```
+
+- Satu sewa paling banyak menerima satu jenis pengingat per hari. Jenisnya ada di enum `App\Enums\ReminderType`:
+    - Sewa aktif tanpa perpanjangan: H-3, H-0, H+1, H+4, dan H+7 ke penghuni, lalu H+10 ke pemilik.
+    - Sewa aktif yang diperpanjang: penghuni diingatkan tepat pada `extended_until`, dan pemilik diminta memutuskan lagi sehari setelahnya. Tidak ada masa tenggang baru.
+    - Sewa nonaktif: pemilik diingatkan pada hari `vacate_by`.
+- **Log dan antrean tersimpan bersama.** Catatan di `reminder_logs` dan job notifikasi masuk dalam satu transaksi. Antrean `database` memakai koneksi yang sama, jadi keduanya tersimpan bersama atau batal bersama. Scheduler yang berjalan dua kali ditolak oleh unique key, sehingga tidak ada pengingat ganda. Kalau pengirimannya gagal, catatannya ikut batal, dan pengingat itu dicoba lagi saat command berikutnya berjalan pada hari yang sama.
+- **Pengingat yang terlewat dilewati.** Kalau server mati pada jam itu, pengingat tidak dikirim belakangan, karena pengingat yang basi malah membingungkan.
+- **Penerima.** Penghuni tanpa akun tidak menerima notifikasi portal. Pengingatnya tetap tercatat, jadi tidak dicoba terus.
+- **Isi pesan** hanya nomor kamar dan tanggal, tanpa nominal.
+- **Mencoba di lokal:** jalankan `./vendor/bin/sail artisan schedule:work` di terminal terpisah, atau `./vendor/bin/sail artisan reminders:send --date=YYYY-MM-DD` untuk tanggal tertentu.
 
 Kalau pengiriman ke Telegram/email gagal, job queue mencoba ulang beberapa kali sebelum ditandai gagal.
 

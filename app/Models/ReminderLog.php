@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReminderType;
 use Carbon\CarbonImmutable;
 use Database\Factories\ReminderLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $tenancy_id
  * @property CarbonImmutable $due_date
- * @property string $type Dijadikan enum di Fase 3, setelah daftar tipe pengingat diputuskan.
+ * @property ReminderType $type
  * @property CarbonImmutable $sent_at
  */
 #[Fillable(['due_date', 'type', 'sent_at'])]
@@ -38,6 +39,7 @@ class ReminderLog extends Model
     {
         return [
             'due_date' => 'date',
+            'type' => ReminderType::class,
             'sent_at' => 'datetime',
         ];
     }
