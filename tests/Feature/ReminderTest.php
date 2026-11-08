@@ -126,5 +126,7 @@ test('reminders are scheduled every day at 08:00', function () {
         ->first(fn ($event) => str_contains((string) $event->command, 'reminders:send'));
 
     expect($event)->not->toBeNull()
-        ->and($event->expression)->toBe('0 8 * * *');
+        ->and($event->expression)->toBe('0 8 * * *')
+        // Kunci yang tertinggal (proses mati di tengah jalan) hilang sendiri setelah 60 menit, bukan 24 jam.
+        ->and($event->expiresAt)->toBe(60);
 });

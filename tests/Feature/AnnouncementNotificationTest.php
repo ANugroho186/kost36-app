@@ -120,5 +120,7 @@ test('announcements are checked every minute', function () {
         ->first(fn ($event) => str_contains((string) $event->command, 'announcements:notify'));
 
     expect($event)->not->toBeNull()
-        ->and($event->expression)->toBe('* * * * *');
+        ->and($event->expression)->toBe('* * * * *')
+        // Kunci yang tertinggal (proses mati di tengah jalan) hilang sendiri setelah 5 menit, bukan 24 jam.
+        ->and($event->expiresAt)->toBe(5);
 });

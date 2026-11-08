@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import NotificationSettingsController from '@/actions/App/Http/Controllers/Settings/NotificationSettingsController';
+import TelegramConnectionController from '@/actions/App/Http/Controllers/Settings/TelegramConnectionController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -15,7 +16,52 @@ type Props = {
     channel: Channel;
     email: string | null;
     telegramConnected: boolean;
+    // false kalau bot belum diatur di .env: pilihan Telegram tidak ditampilkan.
+    telegramAvailable: boolean;
 };
+
+// Di luar form pilihan saluran, karena form tidak boleh bersarang di dalam form lain.
+function TelegramConnection({ connected }: { connected: boolean }) {
+    if (connected) {
+        return (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4 text-sm">
+                <span>Telegram is connected to this account.</span>
+                <Form
+                    {...TelegramConnectionController.destroy.form()}
+                    options={{ preserveScroll: true }}
+                >
+                    {({ processing }) => (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={processing}
+                        >
+                            Disconnect
+                        </Button>
+                    )}
+                </Form>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3 rounded-md border p-4 text-sm">
+            <p>
+                Connect Telegram to receive notifications there. A chat with our
+                bot opens: press <span className="font-medium">Start</span>,
+                then come back and refresh this page. The link works once, for
+                15 minutes.
+            </p>
+            <Form {...TelegramConnectionController.store.form()}>
+                {({ processing }) => (
+                    <Button size="sm" disabled={processing}>
+                        Connect Telegram
+                    </Button>
+                )}
+            </Form>
+        </div>
+    );
+}
 
 function ChannelOption({
     value,
@@ -56,7 +102,12 @@ function ChannelOption({
     );
 }
 
-export default function NotificationSettings({ channel, email }: Props) {
+export default function NotificationSettings({
+    channel,
+    email,
+    telegramConnected,
+    telegramAvailable,
+}: Props) {
     return (
         <>
             <Head title="Notification settings" />
@@ -103,6 +154,19 @@ export default function NotificationSettings({ channel, email }: Props) {
                                     checked={channel === 'email'}
                                     disabled={email === null}
                                 />
+                                {telegramAvailable && (
+                                    <ChannelOption
+                                        value="telegram"
+                                        title="Telegram"
+                                        description={
+                                            telegramConnected
+                                                ? 'Also send them to your Telegram.'
+                                                : 'Connect Telegram below first.'
+                                        }
+                                        checked={channel === 'telegram'}
+                                        disabled={!telegramConnected}
+                                    />
+                                )}
                             </div>
                             <InputError message={errors.notify_channel} />
 
@@ -110,6 +174,10 @@ export default function NotificationSettings({ channel, email }: Props) {
                         </>
                     )}
                 </Form>
+
+                {telegramAvailable && (
+                    <TelegramConnection connected={telegramConnected} />
+                )}
             </div>
         </>
     );

@@ -105,6 +105,19 @@ Aturan notifikasi:
 - Notifikasi dikirim lewat queue, jadi request pengguna tidak menunggu pengiriman. Di lokal, notifikasi baru sampai kalau _queue worker_ berjalan (`./vendor/bin/sail artisan queue:work`).
 - Menu "Notifications" menampilkan 50 notifikasi terbaru milik pengguna itu sendiri. Membuka notifikasi sekaligus menandainya sudah dibaca. Tautannya hanya boleh berupa path di aplikasi ini, tidak pernah ke situs lain.
 
+### Menyambungkan Telegram
+
+1. Di Settings → Notifications, pengguna menekan "Connect Telegram". Aplikasi membuat kode acak **sekali pakai** yang berlaku **15 menit**, lalu membuka `https://t.me/<bot>?start=<kode>`.
+2. Pengguna menekan _Start_ di chat bot. Telegram mengirim `/start <kode>` ke bot.
+3. Command `telegram:poll` (setiap menit, _long polling_, tanpa webhook supaya jalan di lokal) mencocokkan kode itu, lalu menyimpan `chat_id` ke akun dan memilih Telegram sebagai saluran. Bot membalas bahwa akun sudah tersambung.
+4. Aturan keamanan:
+    - Hanya chat **pribadi** yang dilayani. Chat grup diabaikan, supaya notifikasi tidak pernah masuk ke grup.
+    - Kode yang sudah dipakai, kedaluwarsa, atau tidak dikenal tidak menyambungkan siapa pun. Bot menyarankan membuat tautan baru.
+    - Kode disimpan di cache dalam bentuk hash.
+    - Token bot hanya ada di `.env`. Pesan error koneksi ke Telegram disaring, supaya URL yang memuat token tidak masuk log.
+5. "Disconnect" menghapus `chat_id`. Kalau salurannya Telegram, pilihannya kembali ke portal saja.
+6. Kalau bot belum diatur di `.env` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`), pilihan Telegram tidak ditampilkan dan `telegram:poll` tidak menghubungi Telegram.
+
 ## Alur keluhan
 
 ```mermaid

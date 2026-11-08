@@ -6,6 +6,7 @@ use App\Enums\NotifyChannel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\NotificationSettingsRequest;
 use App\Models\User;
+use App\Support\Telegram\TelegramClient;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -16,13 +17,15 @@ use Inertia\Response;
  */
 class NotificationSettingsController extends Controller
 {
-    public function edit(#[CurrentUser] User $user): Response
+    public function edit(#[CurrentUser] User $user, TelegramClient $telegram): Response
     {
         return Inertia::render('settings/notifications', [
             'channel' => $user->notify_channel?->value,
             // Alamat email milik user sendiri. Chat Telegram tidak dikirim, cukup status tersambung.
             'email' => $user->email,
             'telegramConnected' => $user->telegram_chat_id !== null,
+            // Bot belum diatur di .env: pilihan Telegram tidak ditampilkan.
+            'telegramAvailable' => $telegram->isConfigured(),
         ]);
     }
 
