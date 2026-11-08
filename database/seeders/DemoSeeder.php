@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\PaymentProofStatus;
+use App\Enums\ReminderType;
 use App\Enums\RentalInquiryStatus;
 use App\Enums\TenancyDecisionType;
 use App\Models\Announcement;
@@ -134,11 +135,12 @@ class DemoSeeder extends Seeder
             'file_path' => 'payment-proofs/demo-kamar-2.jpg',
         ]);
 
-        foreach (['H-3' => -3, 'H-0' => 0, 'H+1' => 1] as $type => $offset) {
+        // Pengingat yang sudah terkirim sampai hari ini (H+3): H-3, H-0, dan H+1.
+        foreach ([ReminderType::DueIn3Days, ReminderType::DueToday, ReminderType::GraceDay1] as $type) {
             ReminderLog::factory()->for($tenancy)->create([
                 'due_date' => $paidUntil,
                 'type' => $type,
-                'sent_at' => $paidUntil->addDays($offset)->setTime(8, 0),
+                'sent_at' => $paidUntil->addDays($type->daysFromDueDate() ?? 0)->setTime(8, 0),
             ]);
         }
 
@@ -226,10 +228,14 @@ class DemoSeeder extends Seeder
             'body' => 'Kerja bakti membersihkan dapur dan area jemuran pukul 08.00.',
             'published_at' => $this->today->subDays(2),
             'expires_at' => $this->today->addDays(5),
+            // Dalam cerita demo, penghuni sudah diberi tahu saat pengumuman ini tayang. Tanpa ini,
+            // setiap kali demo diisi ulang, scheduler mengirim notifikasi lama ke semua penghuni demo.
+            'notified_at' => $this->today->subDays(2),
         ]);
         Announcement::factory()->for($property)->expired()->create([
             'title' => 'Pemadaman listrik',
             'body' => 'Pemadaman listrik dari PLN pukul 09.00-12.00.',
+            'notified_at' => $this->today->subDays(14),
         ]);
 
         InventoryItem::factory()->for($property)->create(['name' => 'Kompor gas']);

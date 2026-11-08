@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $body
  * @property CarbonImmutable $published_at
  * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $notified_at Diisi command announcements:notify, bukan dari form.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read AnnouncementStatus $status
@@ -41,6 +42,7 @@ class Announcement extends Model
         return [
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'notified_at' => 'datetime',
         ];
     }
 

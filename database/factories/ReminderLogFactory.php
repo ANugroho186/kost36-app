@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ReminderType;
 use App\Models\ReminderLog;
 use App\Models\Tenancy;
 use Carbon\CarbonImmutable;
@@ -22,7 +23,7 @@ class ReminderLogFactory extends Factory
         return [
             'tenancy_id' => Tenancy::factory(),
             'due_date' => CarbonImmutable::today()->addDays(3),
-            'type' => 'H-3',
+            'type' => ReminderType::DueIn3Days,
             'sent_at' => now(),
         ];
     }
