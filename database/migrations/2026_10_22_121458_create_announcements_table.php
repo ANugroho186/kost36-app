@@ -18,6 +18,8 @@ return new class extends Migration
             $table->text('body');
             $table->timestamp('published_at');
             $table->timestamp('expires_at')->nullable();
+            // Kapan penghuni diberi tahu bahwa pengumuman ini tayang. Kosong berarti belum.
+            $table->timestamp('notified_at')->nullable();
             $table->timestamps();
         });
     }

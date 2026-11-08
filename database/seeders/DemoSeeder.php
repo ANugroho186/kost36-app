@@ -228,10 +228,14 @@ class DemoSeeder extends Seeder
             'body' => 'Kerja bakti membersihkan dapur dan area jemuran pukul 08.00.',
             'published_at' => $this->today->subDays(2),
             'expires_at' => $this->today->addDays(5),
+            // Dalam cerita demo, penghuni sudah diberi tahu saat pengumuman ini tayang. Tanpa ini,
+            // setiap kali demo diisi ulang, scheduler mengirim notifikasi lama ke semua penghuni demo.
+            'notified_at' => $this->today->subDays(2),
         ]);
         Announcement::factory()->for($property)->expired()->create([
             'title' => 'Pemadaman listrik',
             'body' => 'Pemadaman listrik dari PLN pukul 09.00-12.00.',
+            'notified_at' => $this->today->subDays(14),
         ]);
 
         InventoryItem::factory()->for($property)->create(['name' => 'Kompor gas']);

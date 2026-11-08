@@ -88,6 +88,7 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 | Laporan paket salah terima      | Pemilik                              | Ada paket yang diterima orang yang salah            |
 | Laporan ditautkan ke paket      | Penghuni pemilik paket               | Paketnya salah diterima dan sedang diurus pemilik   |
 | Permintaan survei baru          | Pemilik                              | Ada permintaan baru (tanpa nama dan kontak)         |
+| Pengumuman mulai tayang         | Penghuni kost itu                    | Judul pengumuman                                    |
 
 Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar. Pemilik juga memilih salurannya sendiri.
 
@@ -138,7 +139,10 @@ flowchart TD
     Tepat pada waktu tayang mulai, statusnya sudah _Live_. Tepat pada batas tayang, statusnya sudah _Expired_.
 
 3. Pemilik melihat semua pengumuman di halamannya, termasuk yang terjadwal dan kedaluwarsa. Penghuni, termasuk penghuni nonaktif, hanya melihat pengumuman _Live_ dari kost tempat ia tinggal: 3 terbaru di dashboard dan semuanya di menu "Announcements".
-4. Notifikasi saat pengumuman tayang dikirim mulai Fase 3.
+4. Command `announcements:notify` berjalan setiap menit dan memberi tahu penghuni tentang pengumuman yang sudah tayang tapi belum diberitahukan (`notified_at` kosong). Pengumuman terjadwal ikut terkirim paling lambat semenit setelah jam tayangnya.
+    - Penerimanya penghuni yang sedang tinggal di kost itu, termasuk sewa nonaktif, yaitu orang yang sama dengan yang boleh membacanya. Isinya hanya judul pengumuman.
+    - Setiap pengumuman diberitahukan sekali saja. Mengubahnya tidak mengirim ulang, dan pengumuman yang kedaluwarsa sebelum sempat dicek tidak diberitahukan.
+    - Penanda `notified_at` dan antrean notifikasi tersimpan dalam satu transaksi. Kalau pengiriman gagal, penandanya ikut batal, dan pengumuman itu dicoba lagi di menit berikutnya.
 
 ## Alur pengingat harian (scheduler, 08.00 WIB)
 

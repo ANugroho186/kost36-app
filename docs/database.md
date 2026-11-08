@@ -135,6 +135,7 @@ erDiagram
         text body
         timestamp published_at
         timestamp expires_at "nullable"
+        timestamp notified_at "nullable, diisi scheduler"
     }
     MAINTENANCE_LOGS {
         bigint id PK
