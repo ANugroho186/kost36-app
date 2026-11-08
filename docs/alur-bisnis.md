@@ -82,16 +82,19 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 | Bukti disetujui                 | Semua penghuni aktif                 | Sewa diperpanjang sampai `paid_until` baru          |
 | Bukti ditolak                   | Pengunggah                           | Hasil verifikasi dan alasan penolakan               |
 | Keluhan baru / selesai          | Pemilik / semua penghuni aktif kamar | Status keluhan                                      |
-| Paket didaftarkan               | Pemilik                              | No. resi, nickname, kamar, perkiraan tiba           |
+| Paket didaftarkan               | Pemilik                              | No. resi, nickname, kamar                           |
 | Pemilik menerima paket          | Penghuni pemilik paket               | Paket sudah di rumah pemilik dan bisa diambil       |
 | Laporan paket salah terima      | Pemilik                              | Ada paket yang diterima orang yang salah            |
 | Laporan ditautkan ke paket      | Penghuni pemilik paket               | Paketnya salah diterima dan sedang diurus pemilik   |
+| Permintaan survei baru          | Pemilik                              | Ada permintaan baru (tanpa nama dan kontak)         |
 
 Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar. Pemilik juga memilih salurannya sendiri.
 
 Aturan notifikasi:
 
-- Setiap notifikasi berisi satu kalimat dan satu tautan ke halaman terkait di aplikasi. Kalimatnya tidak memuat data yang tidak boleh dilihat penerima, misalnya pelapor paket salah terima atau isi paket. Data pribadi pihak lain juga tidak dimuat, misalnya nama dan kontak calon penyewa.
+- Setiap notifikasi berisi satu kalimat dan satu tautan ke halaman terkait di aplikasi. Kalimatnya tidak memuat data yang tidak boleh dilihat penerima, misalnya pelapor paket salah terima. Data pribadi pihak lain juga tidak dimuat, misalnya nama dan kontak calon penyewa.
+- Isi paket tidak pernah ditulis ke notifikasi, termasuk untuk pemilik paketnya sendiri. Di tabel `parcels` isi paket terenkripsi, sedangkan di tabel `notifications` akan tersimpan sebagai teks biasa. Notifikasi paket hanya memakai no. resi.
+- Notifikasi keluhan selesai hanya dikirim ke penghuni kamar itu yang boleh melihat keluhannya (lewat `ComplaintPolicy::view`), dan hanya saat statusnya baru berubah menjadi selesai. Keluhan yang dicatat pemilik sendiri tidak memberi tahu pemilik. Menautkan laporan ke paket yang sama untuk kedua kalinya tidak mengirim notifikasi lagi.
 - Notifikasi dikirim lewat queue, jadi request pengguna tidak menunggu pengiriman. Di lokal, notifikasi baru sampai kalau _queue worker_ berjalan (`./vendor/bin/sail artisan queue:work`).
 - Menu "Notifications" menampilkan 50 notifikasi terbaru milik pengguna itu sendiri. Membuka notifikasi sekaligus menandainya sudah dibaca. Tautannya hanya boleh berupa path di aplikasi ini, tidak pernah ke situs lain.
 

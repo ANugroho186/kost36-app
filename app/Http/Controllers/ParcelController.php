@@ -6,6 +6,7 @@ use App\Http\Requests\ParcelRequest;
 use App\Models\Parcel;
 use App\Models\ParcelReport;
 use App\Models\User;
+use App\Notifications\ParcelRegistered;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -69,7 +70,15 @@ class ParcelController extends Controller
 
     public function store(ParcelRequest $request, #[CurrentUser] User $user): RedirectResponse
     {
-        $user->parcels()->create($request->validated());
+        $parcel = $user->parcels()->create($request->validated());
+
+        // ParcelRequest sudah memastikan user ini sedang tinggal di sebuah kamar.
+        $occupancy = $user->currentOccupancy()->with('tenancy.room.property.owner')->first();
+        $occupancy?->tenancy->room->property->owner->notify(new ParcelRegistered(
+            $occupancy->nickname ?? $user->name,
+            $occupancy->tenancy->room->number,
+            $parcel->tracking_number,
+        ));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Parcel registered.')]);
 
