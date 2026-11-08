@@ -41,7 +41,9 @@ return [
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
             'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
-            'after_commit' => false,
+            // Notifikasi yang dikirim di dalam transaksi baru masuk antrean setelah transaksinya
+            // berhasil. Tanpa ini, worker bisa mengirim notifikasi untuk data yang batal tersimpan.
+            'after_commit' => true,
         ],
 
         'beanstalkd' => [

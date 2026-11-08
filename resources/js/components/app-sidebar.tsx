@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BedDouble,
+    Bell,
     Building2,
     Inbox,
     KeyRound,
@@ -24,6 +25,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as announcements } from '@/routes/announcements';
 import { index as complaints } from '@/routes/complaints';
+import { index as notifications } from '@/routes/notifications';
 import { index as ownerAnnouncements } from '@/routes/owner/announcements';
 import { index as ownerComplaints } from '@/routes/owner/complaints';
 import { index as ownerParcels } from '@/routes/owner/parcels';
@@ -98,11 +100,17 @@ const tenantNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props;
+    const { auth, unreadNotifications } = usePage().props;
+    const notificationsItem: NavItem = {
+        title: 'Notifications',
+        href: notifications(),
+        icon: Bell,
+        badge: unreadNotifications,
+    };
     const mainNavItems =
         auth.user.role === 'owner'
-            ? [dashboardItem, ...ownerNavItems]
-            : [dashboardItem, ...tenantNavItems];
+            ? [dashboardItem, notificationsItem, ...ownerNavItems]
+            : [dashboardItem, notificationsItem, ...tenantNavItems];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
