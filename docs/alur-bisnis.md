@@ -57,6 +57,7 @@ Semua aturan ini dicek di server lewat Policy (`app/Policies`) dan diuji untuk s
 | Lihat laporan salah terima             | Ya                                     | Hanya pelapor                              | Tidak                | Tidak                |
 | Tautkan atau selesaikan laporan        | Ya, selama belum selesai               | Tidak                                      | Tidak                | Tidak                |
 | Buat akun atau reset password penghuni | Ya, reset dengan password pemilik      | Tidak (ganti password sendiri di Settings) | Tidak                | Tidak                |
+| Baca dan kelola permintaan survei      | Ya                                     | Tidak                                      | Tidak                | Tidak                |
 
 Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()`), karena ada data yang memang tidak boleh ia lihat, yaitu isi paket penghuni.
 
@@ -256,5 +257,6 @@ Cara kerjanya di aplikasi:
 1. Calon penyewa mengisi form di halaman publik: nama dan kontak (nomor WhatsApp atau email) wajib, sedangkan tanggal survei (tidak boleh tanggal lampau) dan pesan opsional. Form menampilkan catatan bahwa data hanya dipakai untuk mengatur survei dan dihapus 30 hari setelah selesai.
 2. Form dibatasi **5 kiriman per jam per alamat IP** (`throttle:rental-inquiries`). Kiriman ke-6 ditolak dengan HTTP 429.
 3. Disimpan di `rental_inquiries` dengan status `new`. Status dan `done_at` tidak bisa diisi dari form. Pemilik menerima notifikasi (dibuat bersama sistem notifikasi di Fase 3).
-4. Pemilik menghubungi, lalu mengubah status ke `contacted` dan akhirnya `done` (`done_at` diisi).
-5. Data dihapus otomatis 30 hari setelah `done_at`.
+4. Pemilik membaca permintaan di menu "Viewing requests". Kontak berupa email bisa langsung diklik, dan nomor HP dibuka di WhatsApp.
+5. Pemilik menghubungi calon penyewa, lalu mengubah status ke `contacted` dan akhirnya `done` (`done_at` diisi). Permintaan yang dibuka lagi kembali ke `contacted`, dan `done_at` dikosongkan.
+6. Data dihapus otomatis 30 hari setelah `done_at`, dan tanggalnya ditampilkan di halaman. Spam bisa langsung dihapus pemilik tanpa menunggu.

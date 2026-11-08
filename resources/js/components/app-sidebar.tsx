@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     BedDouble,
     Building2,
+    Inbox,
     KeyRound,
     LayoutGrid,
     Megaphone,
@@ -27,6 +28,7 @@ import { index as ownerAnnouncements } from '@/routes/owner/announcements';
 import { index as ownerComplaints } from '@/routes/owner/complaints';
 import { index as ownerParcels } from '@/routes/owner/parcels';
 import { edit as editProperty } from '@/routes/owner/property';
+import { index as rentalInquiries } from '@/routes/owner/rental-inquiries';
 import { index as rooms } from '@/routes/owner/rooms';
 import { index as tenancies } from '@/routes/owner/tenancies';
 import { index as parcels } from '@/routes/parcels';
@@ -69,6 +71,11 @@ const ownerNavItems: NavItem[] = [
         title: 'Parcels',
         href: ownerParcels(),
         icon: Package,
+    },
+    {
+        title: 'Viewing requests',
+        href: rentalInquiries(),
+        icon: Inbox,
     },
 ];
 
