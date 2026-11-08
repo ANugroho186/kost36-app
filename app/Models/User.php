@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\NotifyChannel;
 use App\Enums\UserRole;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -26,6 +27,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $password
  * @property bool $has_temporary_password Masih memakai password sementara dari pemilik.
  * @property UserRole $role
+ * @property NotifyChannel|null $notify_channel Saluran selain portal. Email memakai kolom email.
+ * @property string|null $telegram_chat_id Diisi lewat bot Telegram, tidak pernah dikirim ke browser.
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property CarbonImmutable|null $two_factor_confirmed_at
@@ -33,9 +36,10 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-// `role` dan `has_temporary_password` sengaja tidak fillable agar tidak bisa diubah lewat input form.
+// `role`, `has_temporary_password`, dan kolom notifikasi sengaja tidak fillable agar tidak bisa diubah
+// lewat input form biasa. Saluran notifikasi diubah lewat Settings\NotificationController.
 #[Fillable(['name', 'username', 'email', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'telegram_chat_id'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -53,6 +57,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'has_temporary_password' => 'boolean',
             'role' => UserRole::class,
+            'notify_channel' => NotifyChannel::class,
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -61,21 +66,31 @@ class User extends Authenticatable
      * Username selalu disimpan huruf kecil, karena Fortify juga mengecilkan input login
      * (`lowercase_usernames`). Tanpa ini, akun "Budi" tidak akan pernah cocok dengan "budi".
      *
-     * @return Attribute<never, string>
+     * Bagian get mengembalikan nilai apa adanya. Ditulis eksplisit supaya PHPStan tahu kolom ini
+     * bisa dibaca: Attribute::set() saja bertipe Attribute<never, ...>, yang membuat $user->username
+     * dianggap `never`.
+     *
+     * @return Attribute<string, string>
      */
     protected function username(): Attribute
     {
-        return Attribute::set(fn (string $value): string => Str::lower($value));
+        return Attribute::make(
+            get: fn (string $value): string => $value,
+            set: fn (string $value): string => Str::lower($value),
+        );
     }
 
     /**
      * Email juga disimpan huruf kecil, karena Fortify mengecilkan input di form lupa password.
      *
-     * @return Attribute<never, string|null>
+     * @return Attribute<string|null, string|null>
      */
     protected function email(): Attribute
     {
-        return Attribute::set(fn (?string $value): ?string => $value === null ? null : Str::lower($value));
+        return Attribute::make(
+            get: fn (?string $value): ?string => $value,
+            set: fn (?string $value): ?string => $value === null ? null : Str::lower($value),
+        );
     }
 
     public function isOwner(): bool

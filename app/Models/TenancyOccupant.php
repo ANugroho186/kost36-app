@@ -2,11 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\NotifyChannel;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenancyOccupantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,15 +16,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $nickname
  * @property CarbonImmutable $moved_in_at
  * @property CarbonImmutable|null $moved_out_at
- * @property NotifyChannel|null $notify_channel
- * @property string|null $notify_contact
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
 // `user_id` tidak fillable: akun hanya ditautkan lewat alur pemilik.
-#[Fillable(['nickname', 'moved_in_at', 'notify_channel', 'notify_contact'])]
-// Kontak tidak boleh terlihat teman sekamar, jadi tidak ikut dikirim ke frontend kecuali diminta.
-#[Hidden(['notify_contact'])]
+#[Fillable(['nickname', 'moved_in_at'])]
 class TenancyOccupant extends Model
 {
     /** @use HasFactory<TenancyOccupantFactory> */
@@ -42,7 +36,6 @@ class TenancyOccupant extends Model
         return [
             'moved_in_at' => 'date',
             'moved_out_at' => 'date',
-            'notify_channel' => NotifyChannel::class,
         ];
     }
 

@@ -122,12 +122,10 @@ test('the start form only offers empty rooms', function () {
 
 test('the tenancy page lists occupants without their contact details', function () {
     $tenancy = Tenancy::factory()->create();
-    TenancyOccupant::factory()->for($tenancy)->create([
-        'nickname' => 'Budi',
-        'notify_contact' => 'budi@example.com',
-    ]);
+    $occupant = TenancyOccupant::factory()->for($tenancy)->create(['nickname' => 'Budi']);
+    $occupant->user?->forceFill(['email' => 'budi@example.com', 'telegram_chat_id' => '987654321'])->save();
 
-    // Tanpa ->etc(): hanya kunci ini yang boleh dikirim untuk setiap penghuni.
+    // Tanpa ->etc(): hanya kunci ini yang boleh dikirim untuk setiap penghuni. Email dan chat Telegram tidak.
     $this->actingAs(User::factory()->owner()->create())
         ->get(route('owner.tenancies.show', $tenancy))
         ->assertInertia(fn (Assert $page) => $page
@@ -141,7 +139,9 @@ test('the tenancy page lists occupants without their contact details', function 
             )
             ->where('canAddOccupant', false)
             ->where('canToggleRoommate', true),
-        );
+        )
+        ->assertDontSee('budi@example.com')
+        ->assertDontSee('987654321');
 });
 
 test('a second person can join once the room is open for sharing', function () {

@@ -20,14 +20,14 @@ Satu kamar bisa dihuni maksimal `rooms.capacity` orang (default 2) dengan satu s
 
 Orang kedua hanya bisa masuk kalau kamar berstatus **"bersedia berbagi kamar"**, dan biasanya ia kenalan penghuni pertama, misalnya teman sekantor atau sekampus. Status ini dinyalakan oleh penghuni kamar itu atau oleh pemilik. Tanpa status itu, kamar dianggap penuh walaupun baru berisi 1 orang. Aturan lengkapnya ada di `docs/database.md`, bagian "Penghuni per kamar".
 
-| Data                                               | Terlihat oleh teman sekamar?                                                                                                       |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Nickname                                           | Ya                                                                                                                                 |
-| Tanggal `paid_until` dan status sewa               | Ya                                                                                                                                 |
-| Keluhan kamar beserta fotonya                      | Ya, karena keluhan menyangkut kamar bersama. Hanya keluhan selama sewa yang sedang berjalan, bukan keluhan penghuni lama kamar itu |
-| Status bukti transfer (menunggu/disetujui/ditolak) | Ya                                                                                                                                 |
-| Gambar bukti transfer                              | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
-| Kontak notifikasi (`notify_contact`)               | Tidak                                                                                                                              |
+| Data                                                 | Terlihat oleh teman sekamar?                                                                                                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Nickname                                             | Ya                                                                                                                                 |
+| Tanggal `paid_until` dan status sewa                 | Ya                                                                                                                                 |
+| Keluhan kamar beserta fotonya                        | Ya, karena keluhan menyangkut kamar bersama. Hanya keluhan selama sewa yang sedang berjalan, bukan keluhan penghuni lama kamar itu |
+| Status bukti transfer (menunggu/disetujui/ditolak)   | Ya                                                                                                                                 |
+| Gambar bukti transfer                                | Tidak. Hanya pengunggah dan pemilik (memuat nama/rekening bank)                                                                    |
+| Saluran dan kontak notifikasi (email, chat Telegram) | Tidak                                                                                                                              |
 
 ### Matriks hak akses
 
@@ -90,7 +90,7 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 | Permintaan survei baru          | Pemilik                              | Ada permintaan baru (tanpa nama dan kontak)         |
 | Pengumuman mulai tayang         | Penghuni kost itu                    | Judul pengumuman                                    |
 
-Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar. Pemilik juga memilih salurannya sendiri.
+Saluran: notifikasi di portal (selalu), ditambah Telegram atau email kalau pengguna itu memilihnya di Settings → Notifications. Pengaturan ini per akun, bukan per kamar, dan berlaku sama untuk pemilik maupun penghuni. Email hanya bisa dipilih kalau akunnya punya alamat email, dan Telegram kalau sudah tersambung ke bot. Kalau emailnya dihapus dari profil, pilihannya kembali ke portal saja.
 
 Aturan notifikasi:
 
