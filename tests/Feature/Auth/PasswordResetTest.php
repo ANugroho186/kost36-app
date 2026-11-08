@@ -114,9 +114,26 @@ test('password can be reset with valid token', function () {
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('login'))
+            // Halaman login mengingatkan bahwa login memakai username, bukan email.
+            ->assertSessionHas('status', fn (string $status) => str_contains($status, 'Log in with your username'));
 
         return true;
+    });
+});
+
+test('the reset email tells people their username, because they log in with it', function () {
+    Notification::fake();
+    $user = User::factory()->create(['username' => 'penghuni9', 'email' => 'budi@example.com']);
+
+    $this->post(route('password.email'), ['email' => 'budi@example.com']);
+
+    Notification::assertSentTo($user, QueuedResetPassword::class, function (QueuedResetPassword $notification) use ($user) {
+        $mail = $notification->toMail($user);
+
+        // Tautan reset bawaan tetap ada, dan username ditambahkan di bagian awal email.
+        return $mail->actionUrl !== null
+            && in_array('Your username is penghuni9. Log in with it, not with your email address.', $mail->introLines, true);
     });
 });
 

@@ -72,6 +72,7 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
     - Jawabannya selalu kalimat yang sama, baik email terdaftar, tidak terdaftar, maupun baru saja meminta.
     - Semua jawaban dibuat **sama lamanya**, yaitu sekitar 1 detik (`auth.timebox_duration`). Untuk email terdaftar, Laravel menyimpan token dengan bcrypt (sekitar 320 ms), jadi tanpa penyamaan waktu, email terdaftar dijawab lebih lambat. Login yang gagal ikut ditahan sampai batas yang sama, sedangkan login yang berhasil tidak menunggu.
     - Email reset dikirim lewat antrean, supaya lamanya tidak bergantung pada server email. Isi job-nya **dienkripsi**, karena berisi token reset asli yang bisa dipakai siapa pun yang membaca tabel `jobs` atau `failed_jobs`.
+    - Login memakai **username**, bukan email. Karena penghuni baru saja memakai email untuk reset, keduanya mudah tertukar. Email reset menyebut username akunnya, halaman login memberi keterangan di bawah kolom username, dan pesan setelah reset berhasil juga mengingatkannya (`lang/en/passwords.php`).
 
 ## Jadwal notifikasi
 
