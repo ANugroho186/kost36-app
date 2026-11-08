@@ -30,6 +30,11 @@ class RentalInquiry extends Model
     use HasFactory;
 
     /**
+     * Permintaan yang sudah selesai dihapus otomatis setelah sekian hari sejak done_at.
+     */
+    public const RETENTION_DAYS = 30;
+
+    /**
      * Permintaan baru selalu berstatus baru. Kolom status tidak punya default di database.
      *
      * @var array<string, mixed>

@@ -4,8 +4,13 @@ namespace App\Actions\Complaints;
 
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
+use App\Models\User;
+use App\Notifications\ComplaintResolved;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Pemilik memindahkan keluhan: dilaporkan → diproses → selesai, atau membukanya lagi.
@@ -19,6 +24,8 @@ class ChangeComplaintStatus
      */
     public function handle(Complaint $complaint, ComplaintStatus $status, ?array $repair = null): void
     {
+        $wasResolved = $complaint->status === ComplaintStatus::Resolved;
+
         DB::transaction(function () use ($complaint, $status, $repair): void {
             $complaint->forceFill([
                 'status' => $status,
@@ -39,5 +46,25 @@ class ChangeComplaintStatus
                 $log->save();
             }
         });
+
+        // Hanya saat baru selesai, bukan setiap kali keluhan yang sudah selesai disimpan ulang.
+        if ($status === ComplaintStatus::Resolved && ! $wasResolved) {
+            Notification::send($this->occupantsWhoCanSee($complaint), new ComplaintResolved($complaint->title));
+        }
+    }
+
+    /**
+     * Penghuni kamar itu yang punya akun dan boleh melihat keluhannya. Lewat ComplaintPolicy::view,
+     * jadi penghuni baru tidak diberi tahu tentang keluhan penghuni lama kamar yang sama.
+     *
+     * @return Collection<int, User>
+     */
+    private function occupantsWhoCanSee(Complaint $complaint): Collection
+    {
+        return User::query()
+            ->whereHas('currentOccupancy.tenancy', fn (Builder $query) => $query->where('room_id', $complaint->room_id))
+            ->get()
+            ->filter(fn (User $user) => $user->can('view', $complaint))
+            ->values();
     }
 }

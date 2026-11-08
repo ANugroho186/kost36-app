@@ -12,6 +12,8 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            // Jumlah notifikasi portal yang belum dibaca (HandleInertiaRequests).
+            unreadNotifications: number;
             [key: string]: unknown;
         };
     }

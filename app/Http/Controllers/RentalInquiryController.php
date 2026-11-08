@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRentalInquiryRequest;
 use App\Models\Property;
+use App\Notifications\RentalInquiryReceived;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -18,6 +19,7 @@ class RentalInquiryController extends Controller
         $property = Property::query()->oldest('id')->firstOrFail();
 
         $property->rentalInquiries()->create($request->validated());
+        $property->owner->notify(new RentalInquiryReceived);
 
         Inertia::flash('toast', [
             'type' => 'success',

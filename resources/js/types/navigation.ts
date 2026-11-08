@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    // Angka kecil di samping menu, misalnya notifikasi yang belum dibaca. 0 tidak ditampilkan.
+    badge?: number;
 };

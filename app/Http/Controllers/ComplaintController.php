@@ -7,6 +7,7 @@ use App\Http\Requests\StoreComplaintRequest;
 use App\Models\Complaint;
 use App\Models\ComplaintPhoto;
 use App\Models\User;
+use App\Notifications\ComplaintReported;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Arr;
@@ -64,12 +65,16 @@ class ComplaintController extends Controller
 
     public function store(StoreComplaintRequest $request, #[CurrentUser] User $user, ReportComplaint $report): RedirectResponse
     {
-        $report->handle(
-            $request->room(),
+        $room = $request->room();
+        $complaint = $report->handle(
+            $room,
             $user,
             ['title' => $request->string('title')->value(), 'description' => $request->string('description')->value()],
             Arr::wrap($request->file('photos')),
         );
+
+        // Hanya untuk keluhan dari penghuni. Keluhan yang dicatat pemilik sendiri tidak perlu memberi tahu dirinya.
+        $room->property->owner->notify(new ComplaintReported($room->number, $complaint->title));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Complaint sent. The owner will follow it up.')]);
 

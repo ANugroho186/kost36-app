@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\ComplaintStatus;
+use App\Enums\RentalInquiryStatus;
 use App\Models\Announcement;
 use App\Models\Complaint;
 use App\Models\Parcel;
 use App\Models\ParcelReport;
+use App\Models\RentalInquiry;
 use App\Models\Room;
 use App\Models\RoomPhoto;
 use App\Models\TenancyOccupant;
@@ -24,6 +26,7 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     $parcel = Parcel::factory()->for($tenant)->create();
     // Laporan yang ia buat sendiri: menautkan atau menyelesaikannya tetap hak pemilik kost.
     $report = ParcelReport::factory()->for($tenant, 'reporter')->create();
+    $inquiry = RentalInquiry::factory()->for($occupancy->tenancy->room->property)->create();
 
     $url = match ($params) {
         'none' => route($routeName),
@@ -35,6 +38,7 @@ test('tenants cannot open or change owner pages', function (string $method, stri
         'announcement' => route($routeName, $announcement),
         'parcel' => route($routeName, $parcel),
         'report' => route($routeName, $report),
+        'inquiry' => route($routeName, $inquiry),
     };
 
     $this->actingAs($tenant)->{$method}($url)->assertForbidden();
@@ -45,7 +49,8 @@ test('tenants cannot open or change owner pages', function (string $method, stri
         ->and($announcement->fresh()?->title)->toBe('Kerja bakti')
         ->and($parcel->fresh()?->held_by_owner_at)->toBeNull()
         ->and($report->fresh()?->parcel_id)->toBeNull()
-        ->and($report->fresh()?->resolved_at)->toBeNull();
+        ->and($report->fresh()?->resolved_at)->toBeNull()
+        ->and($inquiry->fresh()?->status)->toBe(RentalInquiryStatus::New);
 })->with([
     'buka profil kost' => ['get', 'owner.property.edit', 'none'],
     'simpan profil kost' => ['put', 'owner.property.update', 'none'],
@@ -68,6 +73,9 @@ test('tenants cannot open or change owner pages', function (string $method, stri
     'tandai paket sendiri di rumah pemilik' => ['put', 'owner.parcels.held', 'parcel'],
     'tautkan laporan sendiri ke paket' => ['put', 'owner.parcel-reports.link', 'report'],
     'selesaikan laporan sendiri' => ['put', 'owner.parcel-reports.resolve', 'report'],
+    'baca permintaan survei' => ['get', 'owner.rental-inquiries.index', 'none'],
+    'ubah status permintaan survei' => ['put', 'owner.rental-inquiries.update', 'inquiry'],
+    'hapus permintaan survei' => ['delete', 'owner.rental-inquiries.destroy', 'inquiry'],
     'daftar sewa' => ['get', 'owner.tenancies.index', 'none'],
     'simpan sewa baru' => ['post', 'owner.tenancies.store', 'none'],
     'detail sewa sendiri versi pemilik' => ['get', 'owner.tenancies.show', 'tenancy'],
@@ -89,4 +97,5 @@ test('the owner can open the owner pages', function () {
     $this->actingAs($owner)->get(route('owner.complaints.index'))->assertOk();
     $this->actingAs($owner)->get(route('owner.announcements.index'))->assertOk();
     $this->actingAs($owner)->get(route('owner.parcels.index'))->assertOk();
+    $this->actingAs($owner)->get(route('owner.rental-inquiries.index'))->assertOk();
 });

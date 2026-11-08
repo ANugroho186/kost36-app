@@ -6,6 +6,7 @@ use App\Enums\ParcelReportStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Parcel;
 use App\Models\ParcelReport;
+use App\Notifications\ParcelHeldByOwner;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -108,6 +109,7 @@ class ParcelController extends Controller
         Gate::authorize('markHeld', $parcel);
 
         $parcel->forceFill(['held_by_owner_at' => now()])->save();
+        $parcel->user->notify(new ParcelHeldByOwner($parcel->tracking_number));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Parcel marked as at your place.')]);
 

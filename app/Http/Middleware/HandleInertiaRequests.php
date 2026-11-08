@@ -42,6 +42,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Angka di menu Notifications. Closure: hanya dihitung kalau props halaman memang dibangun.
+            'unreadNotifications' => fn (): int => $request->user()?->unreadNotifications()->count() ?? 0,
         ];
     }
 }

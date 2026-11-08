@@ -4,12 +4,14 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ComplaintPhotoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\ComplaintController as OwnerComplaintController;
 use App\Http\Controllers\Owner\OccupantAccountController;
 use App\Http\Controllers\Owner\ParcelController as OwnerParcelController;
 use App\Http\Controllers\Owner\ParcelReportController as OwnerParcelReportController;
 use App\Http\Controllers\Owner\PropertyController;
+use App\Http\Controllers\Owner\RentalInquiryController as OwnerRentalInquiryController;
 use App\Http\Controllers\Owner\RoomController;
 use App\Http\Controllers\Owner\RoomPhotoController;
 use App\Http\Controllers\Owner\TenancyController;
@@ -30,6 +32,13 @@ Route::post('inquiries', [RentalInquiryController::class, 'store'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    // Notifikasi portal milik user yang login (pemilik maupun penghuni).
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('notifications/{notification}/open', [NotificationController::class, 'open'])
+        ->whereUuid('notification')
+        ->name('notifications.open');
 
     // Dipakai penghuni dan pemilik. Siapa yang boleh dicek oleh TenancyPolicy::toggleRoommate.
     Route::put('tenancies/{tenancy}/accepts-roommate', RoommateConsentController::class)
@@ -73,6 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('parcels/{parcel}/held', [OwnerParcelController::class, 'markHeld'])->name('parcels.held');
         Route::put('parcel-reports/{parcelReport}/parcel', [OwnerParcelReportController::class, 'link'])->name('parcel-reports.link');
         Route::put('parcel-reports/{parcelReport}/resolve', [OwnerParcelReportController::class, 'resolve'])->name('parcel-reports.resolve');
+
+        Route::resource('rental-inquiries', OwnerRentalInquiryController::class)->only(['index', 'update', 'destroy']);
 
         Route::resource('tenancies', TenancyController::class)->only(['index', 'store', 'show']);
         Route::post('tenancies/{tenancy}/occupants', [TenancyOccupantController::class, 'store'])

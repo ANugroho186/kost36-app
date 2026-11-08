@@ -350,4 +350,5 @@ Akun tidak pernah dihapus otomatis. Semua langkah di bawah baru dijalankan setel
 - `rental_inquiries` dihapus otomatis 30 hari setelah `done_at` (diisi saat status menjadi `done`).
 - `parcels` dihapus otomatis 30 hari setelah `collected_at`, dan `parcel_reports` 30 hari setelah `resolved_at`.
 - `maintenance_logs`/`inventory_items` dengan `room_id` kosong berarti area umum (dapur, kamar mandi bersama).
+- `notifications.data` hanya berisi `{message, url}`. `url` adalah path relatif di aplikasi. Isinya sengaja tanpa data pribadi pihak lain, karena notifikasi bisa tersimpan lebih lama daripada data asalnya.
 - Nilai tetap (role dan semua kolom status/type) memakai enum PHP berbasis string di `app/Enums`.

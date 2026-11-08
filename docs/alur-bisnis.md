@@ -57,6 +57,7 @@ Semua aturan ini dicek di server lewat Policy (`app/Policies`) dan diuji untuk s
 | Lihat laporan salah terima             | Ya                                     | Hanya pelapor                              | Tidak                | Tidak                |
 | Tautkan atau selesaikan laporan        | Ya, selama belum selesai               | Tidak                                      | Tidak                | Tidak                |
 | Buat akun atau reset password penghuni | Ya, reset dengan password pemilik      | Tidak (ganti password sendiri di Settings) | Tidak                | Tidak                |
+| Baca dan kelola permintaan survei      | Ya                                     | Tidak                                      | Tidak                | Tidak                |
 
 Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()`), karena ada data yang memang tidak boleh ia lihat, yaitu isi paket penghuni.
 
@@ -81,12 +82,21 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 | Bukti disetujui                 | Semua penghuni aktif                 | Sewa diperpanjang sampai `paid_until` baru          |
 | Bukti ditolak                   | Pengunggah                           | Hasil verifikasi dan alasan penolakan               |
 | Keluhan baru / selesai          | Pemilik / semua penghuni aktif kamar | Status keluhan                                      |
-| Paket didaftarkan               | Pemilik                              | No. resi, nickname, kamar, perkiraan tiba           |
+| Paket didaftarkan               | Pemilik                              | No. resi, nickname, kamar                           |
 | Pemilik menerima paket          | Penghuni pemilik paket               | Paket sudah di rumah pemilik dan bisa diambil       |
 | Laporan paket salah terima      | Pemilik                              | Ada paket yang diterima orang yang salah            |
 | Laporan ditautkan ke paket      | Penghuni pemilik paket               | Paketnya salah diterima dan sedang diurus pemilik   |
+| Permintaan survei baru          | Pemilik                              | Ada permintaan baru (tanpa nama dan kontak)         |
 
-Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar.
+Saluran ke penghuni: notifikasi di portal (selalu), ditambah Telegram atau email kalau penghuni itu mengaktifkannya. Pengaturan ini per orang, bukan per kamar. Pemilik juga memilih salurannya sendiri.
+
+Aturan notifikasi:
+
+- Setiap notifikasi berisi satu kalimat dan satu tautan ke halaman terkait di aplikasi. Kalimatnya tidak memuat data yang tidak boleh dilihat penerima, misalnya pelapor paket salah terima. Data pribadi pihak lain juga tidak dimuat, misalnya nama dan kontak calon penyewa.
+- Isi paket tidak pernah ditulis ke notifikasi, termasuk untuk pemilik paketnya sendiri. Di tabel `parcels` isi paket terenkripsi, sedangkan di tabel `notifications` akan tersimpan sebagai teks biasa. Notifikasi paket hanya memakai no. resi.
+- Notifikasi keluhan selesai hanya dikirim ke penghuni kamar itu yang boleh melihat keluhannya (lewat `ComplaintPolicy::view`), dan hanya saat statusnya baru berubah menjadi selesai. Keluhan yang dicatat pemilik sendiri tidak memberi tahu pemilik. Menautkan laporan ke paket yang sama untuk kedua kalinya tidak mengirim notifikasi lagi.
+- Notifikasi dikirim lewat queue, jadi request pengguna tidak menunggu pengiriman. Di lokal, notifikasi baru sampai kalau _queue worker_ berjalan (`./vendor/bin/sail artisan queue:work`).
+- Menu "Notifications" menampilkan 50 notifikasi terbaru milik pengguna itu sendiri. Membuka notifikasi sekaligus menandainya sudah dibaca. Tautannya hanya boleh berupa path di aplikasi ini, tidak pernah ke situs lain.
 
 ## Alur keluhan
 
@@ -256,5 +266,6 @@ Cara kerjanya di aplikasi:
 1. Calon penyewa mengisi form di halaman publik: nama dan kontak (nomor WhatsApp atau email) wajib, sedangkan tanggal survei (tidak boleh tanggal lampau) dan pesan opsional. Form menampilkan catatan bahwa data hanya dipakai untuk mengatur survei dan dihapus 30 hari setelah selesai.
 2. Form dibatasi **5 kiriman per jam per alamat IP** (`throttle:rental-inquiries`). Kiriman ke-6 ditolak dengan HTTP 429.
 3. Disimpan di `rental_inquiries` dengan status `new`. Status dan `done_at` tidak bisa diisi dari form. Pemilik menerima notifikasi (dibuat bersama sistem notifikasi di Fase 3).
-4. Pemilik menghubungi, lalu mengubah status ke `contacted` dan akhirnya `done` (`done_at` diisi).
-5. Data dihapus otomatis 30 hari setelah `done_at`.
+4. Pemilik membaca permintaan di menu "Viewing requests". Kontak berupa email bisa langsung diklik, dan nomor HP dibuka di WhatsApp.
+5. Pemilik menghubungi calon penyewa, lalu mengubah status ke `contacted` dan akhirnya `done` (`done_at` diisi). Permintaan yang dibuka lagi kembali ke `contacted`, dan `done_at` dikosongkan.
+6. Data dihapus otomatis 30 hari setelah `done_at`, dan tanggalnya ditampilkan di halaman. Spam bisa langsung dihapus pemilik tanpa menunggu.

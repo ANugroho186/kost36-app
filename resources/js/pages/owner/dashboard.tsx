@@ -18,6 +18,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as complaints } from '@/routes/owner/complaints';
 import { index as parcelsIndex } from '@/routes/owner/parcels';
+import { index as rentalInquiries } from '@/routes/owner/rental-inquiries';
 import type { RouteDefinition } from '@/wayfinder';
 
 // Sama persis dengan yang dikirim DashboardController::owner(): hanya angka.
@@ -111,6 +112,7 @@ export default function OwnerDashboard({
                     icon={Inbox}
                     title="New viewing requests"
                     value={newRentalInquiries}
+                    href={rentalInquiries()}
                 />
             </div>
         </>

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Owner\LinkParcelReportRequest;
+use App\Models\Parcel;
 use App\Models\ParcelReport;
+use App\Notifications\ParcelMisdelivered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -21,7 +23,15 @@ class ParcelReportController extends Controller
      */
     public function link(LinkParcelReportRequest $request, ParcelReport $parcelReport): RedirectResponse
     {
-        $parcelReport->forceFill(['parcel_id' => $request->integer('parcel_id')])->save();
+        $parcel = Parcel::query()->with('user')->findOrFail($request->integer('parcel_id'));
+        $isNewMatch = $parcelReport->parcel_id !== $parcel->id;
+
+        $parcelReport->forceFill(['parcel_id' => $parcel->id])->save();
+
+        // Tautan yang sama disimpan ulang tidak memberi tahu dua kali.
+        if ($isNewMatch) {
+            $parcel->user->notify(new ParcelMisdelivered($parcel->tracking_number));
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Report linked to the parcel.')]);
 
