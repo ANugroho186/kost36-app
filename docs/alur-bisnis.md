@@ -118,6 +118,13 @@ Aturan notifikasi:
 5. "Disconnect" menghapus `chat_id`. Kalau salurannya Telegram, pilihannya kembali ke portal saja.
 6. Kalau bot belum diatur di `.env` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`), pilihan Telegram tidak ditampilkan dan `telegram:poll` tidak menghubungi Telegram.
 
+### Pengiriman lewat email dan Telegram
+
+- **Isi pesan.** Kalimat yang sama dengan notifikasi portal, ditambah tautan ke halaman terkait di aplikasi. Pesan Telegram berupa teks biasa tanpa format dan tanpa pratinjau tautan, jadi isi seperti judul keluhan tidak bisa mengubah tampilannya.
+- **Satu job per saluran.** Portal, email, dan Telegram masing-masing menjadi job sendiri di antrean. Gangguan sementara dicoba ulang sampai 3 kali (jeda 10 dan 60 detik) sebelum masuk `failed_jobs`.
+- **Bot diblokir.** Kalau penghuni memblokir bot, Telegram menjawab 403. Sambungannya otomatis diputus dan pilihannya kembali ke portal saja, tanpa dicoba ulang.
+- **Diputus sebelum terkirim.** Job memuat ulang akun saat dijalankan, jadi pesan tidak dikirim kalau Telegram sudah diputus sebelum job diproses.
+
 ## Alur keluhan
 
 ```mermaid

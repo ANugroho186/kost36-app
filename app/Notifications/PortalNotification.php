@@ -4,6 +4,8 @@ namespace App\Notifications;
 
 use App\Enums\NotifyChannel;
 use App\Models\User;
+use App\Notifications\Channels\TelegramChannel;
+use App\Support\Telegram\TelegramClient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -25,8 +27,25 @@ abstract class PortalNotification extends Notification implements ShouldQueue
     use Queueable;
 
     /**
+     * Setiap saluran menjadi job tersendiri. Gangguan sementara (email/Telegram) dicoba ulang
+     * sampai 3 kali sebelum masuk failed_jobs.
+     */
+    public int $tries = 3;
+
+    /**
+     * Jeda sebelum percobaan ke-2 dan ke-3, dalam detik.
+     *
+     * @return list<int>
+     */
+    public function backoff(): array
+    {
+        return [10, 60];
+    }
+
+    /**
      * Portal selalu. Ditambah saluran pilihan pengguna di Settings → Notifications, kalau
      * alamatnya ada. Email memakai kolom users.email, jadi tidak ada salinan kontak di tempat lain.
+     * Telegram hanya kalau sudah tersambung dan bot diatur di .env, supaya job tidak gagal berulang.
      *
      * @return list<string>
      */
@@ -34,8 +53,18 @@ abstract class PortalNotification extends Notification implements ShouldQueue
     {
         $channels = ['database'];
 
-        if ($notifiable instanceof User && $notifiable->notify_channel === NotifyChannel::Email && $notifiable->email !== null) {
+        if (! $notifiable instanceof User) {
+            return $channels;
+        }
+
+        if ($notifiable->notify_channel === NotifyChannel::Email && $notifiable->email !== null) {
             $channels[] = 'mail';
+        }
+
+        if ($notifiable->notify_channel === NotifyChannel::Telegram
+            && $notifiable->telegram_chat_id !== null
+            && app(TelegramClient::class)->isConfigured()) {
+            $channels[] = TelegramChannel::class;
         }
 
         return $channels;
@@ -51,6 +80,15 @@ abstract class PortalNotification extends Notification implements ShouldQueue
             ->subject(Str::limit($this->message(), 80))
             ->line($this->message())
             ->action(__('Open :app', ['app' => config('app.name')]), url($this->url()));
+    }
+
+    /**
+     * Teks pesan Telegram: kalimat yang sama dengan portal dan tautan ke aplikasi. Teks biasa,
+     * tanpa format Markdown/HTML, jadi isi seperti judul keluhan tidak bisa merusak pesannya.
+     */
+    public function toTelegram(object $notifiable): string
+    {
+        return $this->message()."\n\n".url($this->url());
     }
 
     /**
