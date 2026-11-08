@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\NotifyChannel;
 use App\Enums\UserRole;
+use App\Notifications\QueuedResetPassword;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -91,6 +92,16 @@ class User extends Authenticatable
             get: fn (?string $value): ?string => $value,
             set: fn (?string $value): ?string => $value === null ? null : Str::lower($value),
         );
+    }
+
+    /**
+     * Email reset password lewat antrean dan terenkripsi (lihat QueuedResetPassword).
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new QueuedResetPassword($token));
     }
 
     public function isOwner(): bool

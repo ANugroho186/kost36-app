@@ -2,7 +2,11 @@
 
 use App\Http\Responses\PasswordResetLinkRequestResponse;
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\QueuedResetPassword;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 
@@ -23,7 +27,27 @@ test('reset password link can be requested', function () {
 
     $this->post(route('password.email'), ['email' => $user->email]);
 
-    Notification::assertSentTo($user, ResetPassword::class);
+    Notification::assertSentTo($user, QueuedResetPassword::class);
+});
+
+test('the reset email is queued, so registered emails are not answered more slowly', function () {
+    // Form ini tidak menunggu server email. Sisa waktu (bcrypt token) ditutup timebox
+    // auth.timebox_duration; diukur di lokal 2026-11-08: semua jalur sekitar 1000 ms.
+    expect(new QueuedResetPassword('token'))->toBeInstanceOf(ShouldQueue::class)
+        ->toBeInstanceOf(ShouldBeEncrypted::class);
+});
+
+test('the reset token waits in the queue encrypted, not readable from the database', function () {
+    config(['queue.default' => 'database']);
+    $user = User::factory()->create(['email' => 'budi@example.com']);
+
+    $this->post(route('password.email'), ['email' => 'budi@example.com']);
+
+    $command = json_decode((string) DB::table('jobs')->value('payload'), true)['data']['command'];
+
+    // Job biasa disimpan sebagai objek PHP terbaca ("O:..."). Yang terenkripsi hanya bisa dibuka dengan APP_KEY.
+    expect($command)->not->toStartWith('O:')
+        ->and(Crypt::decryptString($command))->toContain(QueuedResetPassword::class);
 });
 
 test('reset link requests do not reveal whether an email is registered', function () {
@@ -39,8 +63,8 @@ test('reset link requests do not reveal whether an email is registered', functio
         ->assertSessionHasNoErrors()
         ->assertSessionHas('status', PasswordResetLinkRequestResponse::MESSAGE);
 
-    Notification::assertSentTo($user, ResetPassword::class);
-    Notification::assertSentTimes(ResetPassword::class, 1);
+    Notification::assertSentTo($user, QueuedResetPassword::class);
+    Notification::assertSentTimes(QueuedResetPassword::class, 1);
 });
 
 test('throttled reset link requests look the same as successful ones', function () {
@@ -54,7 +78,7 @@ test('throttled reset link requests look the same as successful ones', function 
         ->assertSessionHasNoErrors()
         ->assertSessionHas('status', PasswordResetLinkRequestResponse::MESSAGE);
 
-    Notification::assertSentTimes(ResetPassword::class, 1);
+    Notification::assertSentTimes(QueuedResetPassword::class, 1);
 });
 
 test('reset password screen can be rendered', function () {
@@ -64,7 +88,7 @@ test('reset password screen can be rendered', function () {
 
     $this->post(route('password.email'), ['email' => $user->email]);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
+    Notification::assertSentTo($user, QueuedResetPassword::class, function ($notification) {
         $response = $this->get(route('password.reset', $notification->token));
 
         $response->assertOk();
@@ -80,7 +104,7 @@ test('password can be reset with valid token', function () {
 
     $this->post(route('password.email'), ['email' => $user->email]);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+    Notification::assertSentTo($user, QueuedResetPassword::class, function ($notification) use ($user) {
         $response = $this->post(route('password.update'), [
             'token' => $notification->token,
             'email' => $user->email,

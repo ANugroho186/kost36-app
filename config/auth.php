@@ -92,6 +92,15 @@ return [
     |
     */
 
+    /*
+     * Waktu minimum (mikrodetik) untuk form lupa password dan login yang gagal. Semua jawaban dibuat
+     * sama lamanya, supaya lamanya tidak membocorkan email/username mana yang terdaftar. Bawaan
+     * Laravel 200 ms terlalu pendek: jalur email terdaftar memakai bcrypt (sekitar 320 ms pada
+     * BCRYPT_ROUNDS=12, diukur 2026-11-08), jadi tetap lebih lama. Login yang berhasil tidak menunggu.
+     * Test memakai nilai kecil (phpunit.xml) supaya tidak tertahan sedetik di setiap test.
+     */
+    'timebox_duration' => (int) env('AUTH_TIMEBOX_DURATION', 1_000_000),
+
     'passwords' => [
         'users' => [
             'provider' => 'users',

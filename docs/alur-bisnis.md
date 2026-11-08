@@ -68,6 +68,10 @@ Pemilik kost **tidak** diberi akses otomatis ke semua hal (tanpa `Gate::before()
 3. Password sementara **ditampilkan sekali** kepada pemilik (flash), lalu diserahkan langsung atau lewat pesan pribadi. Server hanya menyimpan hash-nya.
 4. Selama masih memakai password sementara (`users.has_temporary_password`), dashboard penghuni menampilkan **pengingat** untuk menggantinya. Ini tidak wajib. Pengingat hilang begitu penghuni mengganti password di Settings atau lewat link reset email.
 5. **Reset oleh pemilik** (terutama untuk akun tanpa email) membuat password sementara baru dengan format yang sama, meminta password pemilik sebagai konfirmasi, dan mengeluarkan penghuni dari semua perangkat (sesi dihapus, `remember_token` diganti). Akun pemilik tidak bisa direset lewat jalur ini.
+6. **Lupa password lewat email** (untuk akun yang punya email) dijaga supaya tidak membocorkan email mana yang terdaftar:
+    - Jawabannya selalu kalimat yang sama, baik email terdaftar, tidak terdaftar, maupun baru saja meminta.
+    - Semua jawaban dibuat **sama lamanya**, yaitu sekitar 1 detik (`auth.timebox_duration`). Untuk email terdaftar, Laravel menyimpan token dengan bcrypt (sekitar 320 ms), jadi tanpa penyamaan waktu, email terdaftar dijawab lebih lambat. Login yang gagal ikut ditahan sampai batas yang sama, sedangkan login yang berhasil tidak menunggu.
+    - Email reset dikirim lewat antrean, supaya lamanya tidak bergantung pada server email. Isi job-nya **dienkripsi**, karena berisi token reset asli yang bisa dipakai siapa pun yang membaca tabel `jobs` atau `failed_jobs`.
 
 ## Jadwal notifikasi
 
